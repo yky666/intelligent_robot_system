@@ -1,14 +1,123 @@
-\section{第四组（暂定）：方式四前车轨迹与队列跟随}
-\subsection{方案接口}
-方式四以队列中的前一台TurtleBot为目标，期望保持固定间距或队形。仓库\code{turtlebot/follow4/README.md}给出复用方式二地图位姿输入的接入约定：前车发布唯一定位话题，各车共享地图并配置独立命名空间/TF；也允许由队友明确实现背贴标记观测。队列拓扑应指定每台车的前车，避免末车错误跟随其他运动物体。
+\section{方式四：TurtleBot2视觉跟随与队列行驶}
+\subsection{方案与队列关系}
+竞赛要求TurtleBot2自主跟随目标机器人，跟随过程中不得碰撞障碍物或其他机器人，也不得丢失目标。本组使用三台TurtleBot2纵列跟随：一号车以点云视觉跟踪TonyPi，二号车跟随一号车，三号车跟随二号车。二、三号车通过Kinect识别前车背部的AR码标签，按标签相对位置控制底盘；深度图转换得到的扫描数据用于近距离障碍响应。该队列方案不使用地图定位和全局路径规划。
 
-现有目录主要为接入说明，不足以证明一套独立方式四控制器已完成实机运行。若复用方式二，应由全队明确算法差异和计分认定，不能仅因目标从TonyPi换成TurtleBot就自动宣称四种方式独立。
-\subsection{本组补充区域}
-\pending{实际组号、前车身份、目标输入与频率、轨迹保持/队形算法、失联处置、队列长度对误差的影响，以及末车终点停靠结果。}
-\begin{table}[htbp]\centering\small
-\begin{tabularx}{\linewidth}{p{28mm}YY}\toprule
-姓名/学号 & 具体任务 & 交付证据/合作说明\\\midrule
-待填写 & 前车位姿/身份接口 & 待填写\\
-待填写 & 队列跟随与避碰 & 待填写\\
-待填写 & 多车测试与报告 & 待填写\\\bottomrule
-\end{tabularx}\caption{第四组（暂定）内部职责}\end{table}
+一号车和二号车尾部分别粘贴ID 0和ID 1标签，三号车尾部未贴标签。二号车识别一号车的ID 0标签，三号车识别二号车的ID 1标签。一号车通过点云数据识别并跟踪TonyPi，不使用AR标签。以下功能包和启动参数说明适用于二、三号车。
+
+\subsection{系统组成与控制方法}
+功能包\code{team\_turtlebot\_follow\_plus}使用ROS Kinetic/C++实现，位于\code{turtlebot/follow4/team\_turtlebot\_follow\_plus/}。\code{ar\_track\_alvar}根据Kinect RGB图像和相机内参发布标签位姿；\code{depthimage\_to\_laserscan}将深度图转换为\code{/scan}。跟随节点订阅\code{/ar\_pose\_marker}与\code{/scan}，向\code{/mobile\_base/commands/velocity}发布速度指令。
+
+设相机光学坐标系中的标签位置为$(x,z)$，其中$x$向图像右侧为正、$z$指向相机前方，则标签距离与方位角为
+\begin{equation}
+ r=\sqrt{x^2+z^2},\qquad \theta=\operatorname{atan2}(x,z).
+\end{equation}
+控制节点以10\,Hz运行，按距离误差比例调节前进速度，按方位角调节转向速度；线速度限制在零至设定上限之间，目标距离不足时不倒车，标签偏离车头方向较大时暂停前进。
+
+避障逻辑将扫描数据划分为前方及左右侧扇区。前方出现近障时，节点选择有足够扫描净空的一侧并保持该转向选择；距离达到停车阈值或所选侧净空不足时停止前进。扫描数据超时则发布零速度。目标首次出现前车辆保持停止；已识别目标丢失后，车辆低速原地搜索，超过设定时限仍未重获目标则停止。该方法依赖标签保持在相机视野内，不能沿被遮挡路线推断前车位置。
+
+\subsection{参数设置及含义}
+二、三号车使用相同的跟随和避障参数，目标标签ID分别设为0和1。表\ref{tab:f4-param-meaning}列出实际启动值及参数用途。
+
+{\small\renewcommand{\arraystretch}{1.05}\setlength{\tabcolsep}{3pt}
+\begin{longtable}{p{31mm}p{10mm}p{27mm}p{75mm}}
+\caption{二、三号车运行参数及含义}\label{tab:f4-param-meaning}\\
+\toprule
+参数 & 单位 & 二号车 / 三号车 & 含义\\\midrule
+\endfirsthead
+\caption[]{二、三号车运行参数及含义（续）}\\
+\toprule
+参数 & 单位 & 二号车 / 三号车 & 含义\\\midrule
+\endhead
+\code{marker\_id} & -- & 0 / 1 & 目标标签编号。节点只跟随该ID对应的标签。\\
+\code{marker\_size} & cm & 14.0 / 14.0 & 标签黑色方框的实际边长，用于AR距离估计，应与打印尺寸一致。\\
+\code{desired\_distance} & m & 0.40 / 0.40 & Kinect到标签的目标距离，不等同于两车外壳间距。程序不倒车；标签近于设定距离时停止前进。\\
+\code{max\_linear\_speed} & m/s & 0.35 / 0.35 & 最大前进速度。实际速度随距离误差及避障控制变化。初次低速测试设为0.05--0.10\,m/s。\\
+\code{max\_angular\_speed} & rad/s & 0.25 / 0.25 & 正常跟随及近障转向的角速度上限。\\
+\code{avoid\_distance} & m & 0.38 / 0.38 & 前方障碍进入该距离后，开始减速并向扫描较空的一侧偏转。\\
+\code{stop\_distance} & m & 0.20 / 0.20 & 前方障碍达到该距离后，线速度置零；侧向净空足够时向较空的一侧转向。\\
+\code{side\_clearance} & m & 0.40 / 0.40 & 转向侧所需的最小扫描净空。两侧均不足时车辆停止。\\
+\code{avoid\_release\_margin} & m & 0.20 / 0.20 & 障碍距离超过\code{avoid\_distance}加该余量后，退出避障状态并恢复跟随。\\
+\code{obstacle\_turn\_speed} & rad/s & 0.20 / 0.20 & 达到停车距离后，车辆向选定空旷侧转向时使用的角速度上限。\\
+\code{marker\_timeout} & s & 0.8 / 0.8 & 标签超过该时长没有新检测结果后，节点开始目标搜索。\\
+\code{lost\_search\_timeout} & s & 16 / 16 & 原地搜索目标的最长时间；超时仍未重获目标时停止。\\
+\code{search\_angular\_speed} & rad/s & 0.20 / 0.20 & 目标丢失后原地搜索时的角速度，且不超过\code{max\_angular\_speed}。\\
+\bottomrule
+\end{longtable}}
+
+\subsection{执行流程与运行参数}
+将功能包放入\code{~/catkin\_ws/src/}后编译：
+\begin{lstlisting}[language=bash]
+source /opt/ros/kinetic/setup.bash
+cd ~/catkin_ws
+catkin_make
+source devel/setup.bash
+\end{lstlisting}
+后车分终端启动底盘、Kinect和深度扫描转换：
+\begin{lstlisting}[language=bash]
+# TurtleBot2底盘
+source /opt/ros/kinetic/setup.bash
+source ~/catkin_ws/devel/setup.bash
+roslaunch turtlebot_bringup minimal.launch
+
+# Kinect
+source /opt/ros/kinetic/setup.bash
+source ~/catkin_ws/devel/setup.bash
+roslaunch openni_launch openni.launch
+
+# 深度图转换为 /scan
+source /opt/ros/kinetic/setup.bash
+rosrun depthimage_to_laserscan depthimage_to_laserscan \
+  image:=/camera/depth/image_raw \
+  camera_info:=/camera/depth/camera_info
+\end{lstlisting}
+确认\code{/scan}持续更新后，二号和三号车分别使用下列参数启动跟随节点：
+\begin{lstlisting}[language=bash]
+# 二号车跟随一号车（标签ID 0）
+roslaunch team_turtlebot_follow_plus follow_ar.launch \
+  marker_id:=0 marker_size:=14.0 desired_distance:=0.40 \
+  max_linear_speed:=0.35 max_angular_speed:=0.25 \
+  avoid_distance:=0.38 stop_distance:=0.20 side_clearance:=0.40 \
+  avoid_release_margin:=0.20 obstacle_turn_speed:=0.20 \
+  marker_timeout:=0.8 lost_search_timeout:=16 search_angular_speed:=0.20
+
+# 三号车跟随二号车（标签ID 1）
+roslaunch team_turtlebot_follow_plus follow_ar.launch \
+  marker_id:=1 marker_size:=14.0 desired_distance:=0.40 \
+  max_linear_speed:=0.35 max_angular_speed:=0.25 \
+  avoid_distance:=0.38 stop_distance:=0.20 side_clearance:=0.40 \
+  avoid_release_margin:=0.20 obstacle_turn_speed:=0.20 \
+  marker_timeout:=0.8 lost_search_timeout:=16 search_angular_speed:=0.20
+\end{lstlisting}
+\subsection{实验记录}
+三车联调结果汇总见表\ref{tab:f4-results}。本次测试未专门布置障碍物。
+
+\noindent\begin{minipage}{\linewidth}\centering\small
+\captionof{table}{方式四实验记录}\label{tab:f4-results}
+\vspace{-3pt}\renewcommand{\arraystretch}{1.05}\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{p{39mm}Yp{22mm}}\toprule
+测试项目 & 实际情况 & 结果\\\midrule
+直行跟随 & 队列间距保持稳定，速度适中，车辆间未碰撞 & 完成\\
+转弯跟随 & 采用圆弧轨迹转弯，保持后车对前车标签的观测 & 完成\\
+障碍响应 & 最终场地未专门布置障碍；未碰撞围栏，但围栏及长时间停留的前车曾触发误避障 & 有待优化\\
+目标保持 & 本次联调未发生目标丢失，重捕获逻辑未实际触发 & 未覆盖\\
+终点停车 & 三车依次到达终点并平稳停靠 & 完成\\
+\bottomrule\end{tabularx}
+\end{minipage}
+
+赛道围栏未发生碰撞，但当前车低速行驶时，后车曾把围栏识别为障碍并触发避障；当前车长时间停留在近处时，后车也曾将其判断为障碍，继而原地转向。后续需结合赛道宽度和前后车间距调整避障距离及状态切换条件，并在围栏邻近、前车慢行和停车场景下复测。测试期间目标未丢失，目标重捕获功能尚无实际触发记录。
+
+\subsection{小组分工}
+\noindent\begin{minipage}{\linewidth}\centering\small
+\captionof{table}{方式四小组分工}\label{tab:f4-division}
+\vspace{-3pt}\renewcommand{\arraystretch}{1.05}\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{p{27mm}p{42mm}Y}\toprule
+姓名/学号 & 工作内容 & 交付记录\\\midrule
+徐杰鸿24363164 & 动态跟踪程序编写、避障功能优化及参数调试、跟随控制与障碍测试、报告整理 & 实地测试、参数调优及结果记录\\
+王振宇24363096 & 标签配置与安装，建立标签与车辆的对应关系，完成标签识别验证 & 标签ID清单、安装位置及车辆对应关系记录、识别测试结果\\
+林琢严24363054 & 辅助代码优化、场地布置 & 实验结果记录\\
+何爽24363028 & 辅助代码优化、场地布置 & 实验结果记录\\
+\bottomrule\end{tabularx}
+\end{minipage}
+
+\subsection{小结}
+本组以点云视觉跟踪和AR码标签跟随组成三车队列：一号车跟踪TonyPi，二号车识别ID 0，三号车识别ID 1；标签边长为14\,cm。联调中三车完成直行、圆弧转弯和依次停车，车辆未发生碰撞或目标丢失。围栏和慢行前车引发的误避障仍需通过参数调整和复测处理；本次未进行专门障碍布置，不能据此判定复杂障碍下的避障性能。

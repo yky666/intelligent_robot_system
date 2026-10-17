@@ -1,0 +1,48 @@
+<launch>
+  <!-- marker_size is the printed marker edge length in centimeters. -->
+  <arg name="marker_id" default="0" />
+  <arg name="marker_size" default="14.0" />
+  <arg name="image_topic" default="/camera/rgb/image_raw" />
+  <arg name="camera_info_topic" default="/camera/rgb/camera_info" />
+  <arg name="output_frame" default="camera_rgb_optical_frame" />
+  <arg name="desired_distance" default="0.40" />
+  <arg name="max_linear_speed" default="0.35" />
+  <arg name="max_angular_speed" default="0.25" />
+  <arg name="avoid_distance" default="0.38" />
+  <arg name="stop_distance" default="0.20" />
+  <arg name="side_clearance" default="0.40" />
+  <arg name="avoid_release_margin" default="0.20" />
+  <arg name="obstacle_turn_speed" default="0.20" />
+  <arg name="marker_timeout" default="0.8" />
+  <arg name="lost_search_timeout" default="16.0" />
+  <arg name="search_angular_speed" default="0.20" />
+
+  <node pkg="ar_track_alvar" type="individualMarkersNoKinect"
+        name="ar_track_alvar_plus" output="screen">
+    <param name="marker_size" value="$(arg marker_size)" />
+    <param name="max_new_marker_error" value="0.08" />
+    <param name="max_track_error" value="0.2" />
+    <param name="output_frame" value="$(arg output_frame)" />
+    <remap from="camera_image" to="$(arg image_topic)" />
+    <remap from="camera_info" to="$(arg camera_info_topic)" />
+  </node>
+
+  <node pkg="team_turtlebot_follow_plus" type="ar_laser_follower_plus"
+        name="ar_laser_follower_plus" output="screen" required="true">
+    <param name="marker_id" value="$(arg marker_id)" />
+    <param name="desired_distance" value="$(arg desired_distance)" />
+    <param name="max_linear_speed" value="$(arg max_linear_speed)" />
+    <param name="max_angular_speed" value="$(arg max_angular_speed)" />
+    <param name="avoid_distance" value="$(arg avoid_distance)" />
+    <param name="stop_distance" value="$(arg stop_distance)" />
+    <param name="side_clearance" value="$(arg side_clearance)" />
+    <param name="avoid_release_margin" value="$(arg avoid_release_margin)" />
+    <param name="obstacle_turn_speed" value="$(arg obstacle_turn_speed)" />
+    <param name="marker_timeout" value="$(arg marker_timeout)" />
+    <param name="lost_search_timeout" value="$(arg lost_search_timeout)" />
+    <param name="search_angular_speed" value="$(arg search_angular_speed)" />
+    <param name="marker_topic" value="/ar_pose_marker" />
+    <param name="scan_topic" value="/scan" />
+    <param name="cmd_vel_topic" value="/mobile_base/commands/velocity" />
+  </node>
+</launch>

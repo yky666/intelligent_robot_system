@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>team_turtlebot_follow_plus</name>
+  <version>0.1.0</version>
+  <description>C++ AR marker follower for Turtlebot2 with laser reactive obstacle avoidance.</description>
+  <maintainer email="haiden@todo.todo">haiden</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>ar_track_alvar_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <exec_depend>ar_track_alvar</exec_depend>
+</package>
