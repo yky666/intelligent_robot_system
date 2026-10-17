@@ -1,0 +1,23 @@
+\begin{tikzpicture}[
+state/.style={draw=Navy!65,line width=.8pt,rounded corners=3pt,fill=Navy!3,text width=38mm,minimum height=21mm,align=center,inner sep=3mm,font=\small,text=black},
+action/.style={state,draw=Teal,fill=Teal!6},
+edge/.style={-{Stealth[length=2.3mm]},line width=.9pt,draw=Navy},
+trigger/.style={font=\footnotesize,text=Navy,fill=white,inner sep=1.4pt}]
+\node[state] (s) at (0,0) {\textbf{01\quad 等待启动}\\[1.5mm]按 S／自动延时};
+\node[action] (g) at (5.5,0) {\textbf{02\quad 抱起并锁臂}\\[1.5mm]\texttt{grab\_final\_v2}};
+\node[state] (a) at (11,0) {\textbf{03\quad 走向 A}\\[1.5mm]观测、对中、前进};
+\node[action] (l) at (11,-3) {\textbf{04\quad 左转寻找 B}\\[1.5mm]最多 12 次尝试};
+\node[state] (b) at (5.5,-3) {\textbf{05\quad 走向 B}\\[1.5mm]重置单段运行计数};
+\node[action] (r) at (0,-3) {\textbf{06\quad 右转寻找 C}\\[1.5mm]确认下一目标可见};
+\node[state] (c) at (0,-6) {\textbf{07\quad 走向 C}\\[1.5mm]持续观测终点目标};
+\node[action] (p) at (5.5,-6) {\textbf{08\quad 解锁并放置}\\[1.5mm]\texttt{put\_down}};
+\node[state] (d) at (11,-6) {\textbf{09\quad 结束任务}\\[1.5mm]退出线程、保留日志};
+\draw[edge] (s)--node[trigger,above] {启动}(g);
+\draw[edge] (g)--node[trigger,above,align=center] {动作\\完成}(a);
+\draw[edge] (a)--node[trigger,right] {到达 A}(l);
+\draw[edge] (l)--node[trigger,above] {看到 B}(b);
+\draw[edge] (b)--node[trigger,above] {到达 B}(r);
+\draw[edge] (r)--node[trigger,right] {看到 C}(c);
+\draw[edge] (c)--node[trigger,above] {到达 C}(p);
+\draw[edge] (p)--node[trigger,above,align=center] {动作\\完成}(d);
+\end{tikzpicture}

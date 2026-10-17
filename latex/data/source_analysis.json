@@ -1,0 +1,112 @@
+{
+  "actions": [
+    {
+      "name": "grab_final_v2",
+      "frames": 7,
+      "seconds": 9.5,
+      "arm_tail": [
+        566,
+        908,
+        40,
+        435,
+        108,
+        935
+      ]
+    },
+    {
+      "name": "catch_ball_go",
+      "frames": 10,
+      "seconds": 0.95,
+      "arm_tail": [
+        566,
+        908,
+        40,
+        435,
+        108,
+        935
+      ]
+    },
+    {
+      "name": "catch_ball_turn_left",
+      "frames": 6,
+      "seconds": 1.0,
+      "arm_tail": [
+        566,
+        908,
+        40,
+        435,
+        108,
+        935
+      ]
+    },
+    {
+      "name": "catch_ball_turn_right",
+      "frames": 6,
+      "seconds": 1.0,
+      "arm_tail": [
+        566,
+        908,
+        40,
+        435,
+        108,
+        935
+      ]
+    }
+  ],
+  "hamming": [
+    [
+      0,
+      4,
+      4
+    ],
+    [
+      4,
+      0,
+      4
+    ],
+    [
+      4,
+      4,
+      0
+    ]
+  ],
+  "trail": [
+    [
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.5
+    ],
+    [
+      0.0,
+      1.0
+    ],
+    [
+      0.0,
+      1.5
+    ],
+    [
+      -0.5,
+      1.5
+    ],
+    [
+      -1.0,
+      1.5
+    ],
+    [
+      -1.5,
+      1.5
+    ],
+    [
+      -1.5,
+      2.0
+    ],
+    [
+      -1.5,
+      2.5
+    ]
+  ],
+  "type": "source-derived action data and synthetic function analysis"
+}

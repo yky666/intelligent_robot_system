@@ -1,14 +1,5 @@
-\section{第三组（暂定）：方式三RGB-D实时检测与避障跟随}
+\section{方式三RGB-D实时检测与避障跟随}
 \subsection{已有实现摘要}
 仓库\code{turtlebot/follow3/rgbd_following}已包含颜色与深度候选检测、多帧目标关联、外观模板及有界重识别、历史轨迹目标、滚动里程计代价地图与独立速度门控\cite{follow3}。其观测来源为实时RGB-D与本车里程计，不依赖预建地图或前车广播位置，区别于方式二的固定地图导航。
 
 现有说明将检测阈值作为示例，要求登记真实身份模板并在独立样本上评估。区域深度有效不等于识别到了TonyPi；颜色候选也不能替代身份连续性验证。源码和合成演练已提供，真实目标识别、导航与全队终点验收仍需对应组确认。
-\subsection{本组补充区域}
-\pending{实际组号、识别特征与数据集、RGB/深度配准、遮挡重识别策略、主动绕障方式、默认参数与实测结果。应给出误识别、目标切换、目标丢失及终点停车的原始证据。}
-\begin{table}[htbp]\centering\small
-\begin{tabularx}{\linewidth}{p{28mm}YY}\toprule
-姓名/学号 & 具体任务 & 交付证据/合作说明\\\midrule
-待填写 & 数据与目标识别 & 待填写\\
-待填写 & 控制、避障与联调 & 待填写\\
-待填写 & 评估与报告 & 待填写\\\bottomrule
-\end{tabularx}\caption{第三组（暂定）内部职责}\end{table}

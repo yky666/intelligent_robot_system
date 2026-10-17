@@ -1,0 +1,10 @@
+<launch>
+  <arg name="sender_ip" />
+  <arg name="session" default="team1" />
+  <arg name="port" default="15000" />
+  <node pkg="multi_robot_following" type="mission_bridge.py" name="mission_bridge" output="screen">
+    <param name="sender_ip" value="$(arg sender_ip)" />
+    <param name="session" value="$(arg session)" />
+    <param name="port" value="$(arg port)" />
+  </node>
+</launch>

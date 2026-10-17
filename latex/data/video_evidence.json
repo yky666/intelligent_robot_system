@@ -1,0 +1,65 @@
+{
+  "source": "比赛视频.mp4（原片由第一小组归档，未提交视频）",
+  "fps": 29.000059821174318,
+  "frames": 6830,
+  "duration_s": 235.51675555555556,
+  "width": 960,
+  "height": 544,
+  "sha256": "6561af6882c9b350b0996cf5c11ad127643f3faabe0fe71015640d8f89b706c8",
+  "selected_frames": [
+    {
+      "id": "V008",
+      "requested_time_s": 8,
+      "frame_index": 232,
+      "file": "figures/video/competition_008s.jpg"
+    },
+    {
+      "id": "V076",
+      "requested_time_s": 76,
+      "frame_index": 2204,
+      "file": "figures/video/competition_076s.jpg"
+    },
+    {
+      "id": "V102",
+      "requested_time_s": 102,
+      "frame_index": 2958,
+      "file": "figures/video/competition_102s.jpg"
+    },
+    {
+      "id": "V133",
+      "requested_time_s": 133,
+      "frame_index": 3857,
+      "file": "figures/video/competition_133s.jpg"
+    },
+    {
+      "id": "V165",
+      "requested_time_s": 165,
+      "frame_index": 4785,
+      "file": "figures/video/competition_165s.jpg"
+    },
+    {
+      "id": "V184",
+      "requested_time_s": 184,
+      "frame_index": 5336,
+      "file": "figures/video/competition_184s.jpg"
+    },
+    {
+      "id": "V196",
+      "requested_time_s": 196,
+      "frame_index": 5684,
+      "file": "figures/video/competition_196s.jpg"
+    },
+    {
+      "id": "V218",
+      "requested_time_s": 218,
+      "frame_index": 6322,
+      "file": "figures/video/competition_218s.jpg"
+    },
+    {
+      "id": "V234",
+      "requested_time_s": 234,
+      "frame_index": 6786,
+      "file": "figures/video/competition_234s.jpg"
+    }
+  ]
+}

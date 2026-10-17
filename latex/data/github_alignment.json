@@ -1,0 +1,47 @@
+{
+  "review_date": "2026-10-17",
+  "original_revision": "7bbf5886ac6f0096e67cdda29c55bc6f8a8e822a",
+  "review_revision": "43a7771baa2b33afc203b54543001995838879fd",
+  "files": [
+    {
+      "path": "turtlebot/follow4/README.md",
+      "current_sha256": "f885e5153859f7ebdfb40efd526446297fd16212008223ee1182d1a8da185b3a",
+      "same_as_original": true
+    },
+    {
+      "path": "turtlebot/follow2/multi_robot_following/launch/follow_map.launch",
+      "current_sha256": "4374cac6c8cc0b32547ad3e5485ea42a156542875675d30d6df823692f97cfdd",
+      "same_as_original": false
+    },
+    {
+      "path": "turtlebot/follow2/multi_robot_following/scripts/pose_relay.py",
+      "current_sha256": "ec6d39c7a2552bce1fefa299e86b6f6e431fc552aa82d9ca1bc5395050ca618e",
+      "same_as_original": true
+    },
+    {
+      "path": "turtlebot/follow2/multi_robot_following/scripts/map_follower.py",
+      "current_sha256": "42a5faf0510104bae4518bf70a3f8d8178d977b9e406b23cfba344592f0006eb",
+      "same_as_original": true
+    },
+    {
+      "path": "turtlebot/follow2/multi_robot_following/src/competition_core/planning.py",
+      "current_sha256": "fa7bf277738c0d4fb8240bab7b78c581679b5c83e6c4213deba49f1e6e54cb7b",
+      "same_as_original": true
+    },
+    {
+      "path": "turtlebot/follow2/competition_core/src/planning.py",
+      "current_sha256": "fa7bf277738c0d4fb8240bab7b78c581679b5c83e6c4213deba49f1e6e54cb7b",
+      "same_as_original": null
+    },
+    {
+      "path": "turtlebot/follow1/ar_marker_following/scripts/velocity_gate.py",
+      "current_sha256": "438022ff20bf54142948585c53ee4f00004d20a2f84b08340ae1e3e42c75d8de",
+      "same_as_original": null
+    },
+    {
+      "path": "humanoid/maze_route/marker_route.py",
+      "current_sha256": "e321f24e02f064360d265d8b63b903699cb2c0380d7f592d7cf07d5c858365b4",
+      "same_as_original": true
+    }
+  ]
+}

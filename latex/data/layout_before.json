@@ -1,0 +1,452 @@
+[
+  {
+    "page": 1,
+    "bottom": 761.3,
+    "blank_bottom": 8.7,
+    "first": "实验 实验报告 基于视觉与地图导航的 多机协同控制 方案设计与技术实现 TonyPi 抱物穿行 标记路线 状态机 TurtleBot2 建图定位 轨迹跟随 避障"
+  },
+  {
+    "page": 2,
+    "bottom": 456.2,
+    "blank_bottom": 313.8,
+    "first": "Pi 人形机器人和四台TurtleBot2 为平台，研究抱物穿行与多机 器人协同跟随。任务要求TonyPi 抱持目标物体完成左、右转向并在终点放置，移动机 器人"
+  },
+  {
+    "page": 3,
+    "bottom": 736.6,
+    "blank_bottom": 33.4,
+    "first": ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . I 1 实验"
+  },
+  {
+    "page": 4,
+    "bottom": 722.5,
+    "blank_bottom": 47.5,
+    "first": " 任务要求与验收口径 依据课程《第五–六章：基于视觉与AI 定位的多机协同控制实验》[1]，系统同时包 含人形机器人搬运和多车跟随两项任务。TonyPi 从指定"
+  },
+  {
+    "page": 5,
+    "bottom": 450.5,
+    "blank_bottom": 319.5,
+    "first": " 左转 右转 横向围挡 遮挡区 长直窄道 (a) 围挡、窄道与两次转向的拓扑重建 01  长直围挡 边界由实体面板及立柱组成； 地面胶带不是可通行区域的充分证据"
+  },
+  {
+    "page": 6,
+    "bottom": 679.5,
+    "blank_bottom": 90.5,
+    "first": "连续围挡形成包含转角与视线遮挡的狭窄通道，近端可见TurtleBot2 平 台。照片由实验小组提供，仅用于说明现场结构，不据此恢复绝对尺度。 实景中连续灰色挡板"
+  },
+  {
+    "page": 7,
+    "bottom": 635.1,
+    "blank_bottom": 134.9,
+    "first": " 本报告以一台TonyPi 和四台TurtleBot2 组成的异构系统为对象。本组负责TonyPi 抱物路线与方式二建图避障跟随。其余方法由对应小组独立补充，本"
+  },
+  {
+    "page": 8,
+    "bottom": 626.5,
+    "blank_bottom": 143.5,
+    "first": "记／道路观测 路线状态机 抓取、直行、 转弯、放置 动作组执行 抱物上肢固定 TurtleBot 相机 背部AR 目标 按时间戳变换至map 历史轨迹与回退点 "
+  },
+  {
+    "page": 9,
+    "bottom": 764.6,
+    "blank_bottom": 5.4,
+    "first": "口 内容 使用约束 /ar_pose_marker 带ID 与时间戳的标记位 姿 ALVAR 标记；尺寸、相机内参和坐标系须 一致 target_pose 目标"
+  },
+  {
+    "page": 10,
+    "bottom": 773.4,
+    "blank_bottom": -3.4,
+    "first": "与边界 入口 主要逻辑 本报告采用的地位 open_loop.py stand、grab、定次数前进/左右转、 release 调试基线，不能补偿累计偏移 co"
+  },
+  {
+    "page": 11,
+    "bottom": 736.6,
+    "blank_bottom": 33.4,
+    "first": "后续降下、松开及站起帧保留原动作。运行时若首帧与当 前姿态差值超过25 刻度，将过渡时长延长到300 ms；这一过渡不等于动态稳定性已获 证明。 针对机体前倾，"
+  },
+  {
+    "page": 12,
+    "bottom": 740.9,
+    "blank_bottom": 29.1,
+    "first": " 固定标记识别与测距 最新程序不依赖地面标识，而是在墙面布置三张已知模板标记。每张标记由9 × 9 格构成，外两格为黑边，中间5 × 5 格为数据，黑色正方形边"
+  },
+  {
+    "page": 13,
+    "bottom": 722.9,
+    "blank_bottom": 47.1,
+    "first": "视化调试 现场曾出现/dev/video0 消失，内核提示USB 枚举错误和线缆异常，重新插接后 恢复。早期通用框架通过本地HTTP 快照共享网页相机，避免重复"
+  },
+  {
+    "page": 14,
+    "bottom": 702.3,
+    "blank_bottom": 67.7,
+    "first": "换 4.2.1 状态机的层次建模与实际控制入口 最新路线程序没有用一个枚举变量表达所有状态，而是由Route 线程、phase 索引、 循环分支及go/stop"
+  },
+  {
+    "page": 15,
+    "bottom": 764.2,
+    "blank_bottom": 5.8,
+    "first": "锁臂状态 启动先建立日志目录，解析参数及图形模式，再构造Servos、固定头部、打开Eyes、 启动Route 线程。真实舵机模式尝试关闭占用串口的厂家程序并停"
+  },
+  {
+    "page": 16,
+    "bottom": 752.5,
+    "blank_bottom": 17.5,
+    "first": "能证明精确完成90 度；后续对中仍会改变朝向。 (A, left) →(B, right) →(C, stop), dA,B ≤dturn, dC ≤dstop"
+  },
+  {
+    "page": 17,
+    "bottom": 776.2,
+    "blank_bottom": -6.2,
+    "first": "不能当作实机识别混淆矩阵，也不提供误识别概率。 dH(a, b) = 25 ∑ j=1 ⊮(aj̸ = bj), d∗ ab = min r∈{0,1,2,3}"
+  },
+  {
+    "page": 18,
+    "bottom": 767.7,
+    "blank_bottom": 2.3,
+    "first": "大于水平距离。距离误差还受打印尺寸、角点、标定、运 动模糊和观察角影响。下图右侧按水平40 cm 绘制几何关系，不是设备测距精度。正式 标定要用同一定义的真实斜"
+  },
+  {
+    "page": 19,
+    "bottom": 757.7,
+    "blank_bottom": 12.3,
+    "first": "、取中位数 相机无新帧 原地等待；超 时暂停或退出 目标有效？ 目标不可见 受限盲行与 偏航补偿 超限则暂停／退出 满足到达条件？ 结束当前路段 进入转角或 终"
+  },
+  {
+    "page": 20,
+    "bottom": 773.4,
+    "blank_bottom": -3.4,
+    "first": "前进是效率与偏差的折中，连续纠偏次数过多仍会暂停， 不应从实验记录中删除这类失败事件。 20 30 40 50 60 70 80 观测斜距（cm） -30 -1"
+  },
+  {
+    "page": 21,
+    "bottom": 706.7,
+    "blank_bottom": 63.3,
+    "first": "r 里完成精准航向闭环。单周期耗时还包括文件动作时长、观 测等待和SDK 调用，不能只累加d6a 时长估计全程。 若相机无新帧，corner 原地等画面，不继续"
+  },
+  {
+    "page": 22,
+    "bottom": 773.7,
+    "blank_bottom": -3.7,
+    "first": "与日志 4.5.1 当前动作文件与首帧过渡的实证分析 最新动作副本从grab_final_v2 尾帧锁臂，六个刻度为566、908、40、435、108、 93"
+  },
+  {
+    "page": 23,
+    "bottom": 772.0,
+    "blank_bottom": -2.0,
+    "first": "理立即停止不同，电机当前插值与负载惯性仍存在。 pause 在交互模式等S，无头模式直接结束。摄像头超时、转角失败、纠偏次数过多 都可触发，但恢复点由各循环上下"
+  },
+  {
+    "page": 24,
+    "bottom": 679.6,
+    "blank_bottom": 90.4,
+    "first": "直接结束。分析完整任务时必须固定这四类开关，否则 “结束”对应不同物理结果。 表6: 任务主状态的转换契约。 当前状态 事件/守卫 执行动作 后继状态 等待 S"
+  },
+  {
+    "page": 25,
+    "bottom": 614.5,
+    "blank_bottom": 155.5,
+    "first": "点 不足三个新帧 相机等待 断流不持续走/转 三帧仅一帧有目 标 目标不可见分支 盲行上限及先前是否见过 距离达到，方位偏 大 到达优先 路口空间与码布置是否合"
+  },
+  {
+    "page": 26,
+    "bottom": 688.2,
+    "blank_bottom": 81.8,
+    "first": "节点可见 内核当前枚举到相机，不能证明能取图 连续新帧与序号 当前取流持续，不保证标记一定有效 标记多数可见 当前look 观测成立，不保证后续转角可靠 完整负"
+  },
+  {
+    "page": 27,
+    "bottom": 767.4,
+    "blank_bottom": 2.6,
+    "first": "建议。 标定对象 记录量 验证方法 标记打印 黑色方形实际边长 尺量多边，与SIZE_CM 一致 相机 内参、畸变、分辨率 多姿态图，独立距离检查 码布局 墙面"
+  },
+  {
+    "page": 28,
+    "bottom": 773.7,
+    "blank_bottom": -3.7,
+    "first": "5.0.1 已有实现摘要与方式认定 仓库已合并从虚拟机提取的ar_follower 包及独立实验说明[5]。该实现通过Kinect 检测前方机器人背部ALVAR"
+  },
+  {
+    "page": 29,
+    "bottom": 771.2,
+    "blank_bottom": -1.2,
+    "first": ".launch，另用课程导航RViz 配置查看地图、扫描和TF。该入口已集 成部分相机和导航节点，不与新包的建图入口重复启动。 建图时采集里程计和扫描，通过GM"
+  },
+  {
+    "page": 30,
+    "bottom": 661.7,
+    "blank_bottom": 108.3,
+    "first": "位位姿，但必须共享地图原点并检查时间戳、跳变和 协方差。当前第一组方案以直接观察TonyPi 为主；只有确认切换到前车定位模式时， 才在实验表中登记该数据源。 "
+  },
+  {
+    "page": 31,
+    "bottom": 759.8,
+    "blank_bottom": 10.2,
+    "first": "数（非最终实测值） 参数 默认值 作用 跟随路径间距 0.9 m 与目标沿历史路径保持滞后 最大前进速度 0.15 m/s 限制跟随底盘速度 最大角速度 0.5"
+  },
+  {
+    "page": 32,
+    "bottom": 685.0,
+    "blank_bottom": 85.0,
+    "first": "续发布carrying，但这仅是测试输入，不能写成全队 自动联动已完成。终点还需核对后车是否真正进入终点区域并停稳，不能只用TonyPi 的放置完成判定所有车辆"
+  },
+  {
+    "page": 33,
+    "bottom": 769.1,
+    "blank_bottom": 0.9,
+    "first": "备阶段 驱动+ 传感器+ gmapping + map_saver 比赛阶段 map_server + AMCL + move_base 地图证据 实测pgm/"
+  },
+  {
+    "page": 34,
+    "bottom": 768.4,
+    "blank_bottom": 1.6,
+    "first": "产生错误匹配，因此需结合扫描对齐、TF 连续性和时间 戳共同判断。 源码依据：turtlebot/follow2/multi_robot_following/s"
+  },
+  {
+    "page": 35,
+    "bottom": 672.5,
+    "blank_bottom": 97.5,
+    "first": "的不同位置，结果取决于累计路程和末段插值。输入 历史过短时，回退目标不能凭空延伸到未知路径，跟随器必须结合最小轨迹长度与间距 条件决定是否发出目标。下面将这些条"
+  },
+  {
+    "page": 36,
+    "bottom": 773.4,
+    "blank_bottom": -3.4,
+    "first": " 7 8 x (m) 0 1 2 3 4 5 6 y (m) 圆足迹半径 0.26 m：青色可行 / 红色阻塞 0 1 2 3 4 5 6 7 8 x (m) "
+  },
+  {
+    "page": 37,
+    "bottom": 773.4,
+    "blank_bottom": -3.4,
+    "first": "im_time 较长可以看见更远的碰撞，却会增加计算并把未 来不确定性带入选择。运动采样必须与实际制动能力一致。 仓库关闭恢复旋转和clearing_rotat"
+  },
+  {
+    "page": 38,
+    "bottom": 703.5,
+    "blank_bottom": 66.5,
+    "first": "t/follow2/multi_robot_following/config/move_base.yaml； turtlebot/follow3/rgbd_fo"
+  },
+  {
+    "page": 39,
+    "bottom": 773.4,
+    "blank_bottom": -3.4,
+    "first": "频收益 减少重复抢占和目标抖动 终点风险 目标移动小于阈值可能留在旧目标 停止路径 撤销许可+ cancel_goal + 状态原因 表17: 导航目标更新、取"
+  },
+  {
+    "page": 40,
+    "bottom": 740.0,
+    "blank_bottom": 30.0,
+    "first": "follow2.md；latex/sections/30_follow2.tex；课程传感器链配置。 6.3.2 地图版本、AMCL 初值与长走廊可观测性 赛道"
+  },
+  {
+    "page": 41,
+    "bottom": 634.3,
+    "blank_bottom": 135.7,
+    "first": "se_marker 目标坐标适配 marker_target + TF 任务与定位状态 任务桥+ AMCL 地图跟随器 map_follower 全局／局部规划"
+  },
+  {
+    "page": 42,
+    "bottom": 618.5,
+    "blank_bottom": 151.5,
+    "first": "、目标有效 02 定位与坐标 定位、地图、TF 有效 03 空间可行性 间距、轨迹 与足迹通过 04 导航许可 发送目标、导 航未失败 05 速度安全复核 时效"
+  },
+  {
+    "page": 43,
+    "bottom": 750.0,
+    "blank_bottom": 20.0,
+    "first": "25 0.50 0.75 1.00 now − stamp（s） 0.0 0.5 1.0 1.5 2.0 2.5 3.0 3.5 有效域（分行显示） 实际 fr"
+  },
+  {
+    "page": 44,
+    "bottom": 738.7,
+    "blank_bottom": 31.3,
+    "first": "二者分别能运行不能证明自动协同完成，报告应把这一集 成点明确画成待对接接口。 建议适配映射为：等待和暂停映射idle/stopped，实际抱物行走和转角映射ca"
+  },
+  {
+    "page": 45,
+    "bottom": 773.4,
+    "blank_bottom": -3.4,
+    "first": "eE(t) = ∥pr −pl∥−df, e⊥(t) = min q∈Γl ∥pr −q∥, Tstop = tstopped −tfault. (26) 停止"
+  },
+  {
+    "page": 46,
+    "bottom": 754.1,
+    "blank_bottom": 15.9,
+    "first": "描更新，不能给没有扫描的前车制造新鲜定位。实验记录 要区分内部质量指标和独立真值误差。 源码依据：planning.py：localization_ok；loc"
+  },
+  {
+    "page": 47,
+    "bottom": 758.8,
+    "blank_bottom": 11.2,
+    "first": "末端冻结 TonyPi 放下物块不代表TurtleBot 已进入终点。地图follower 在mission=done 且 距后置点小于finish_toler"
+  },
+  {
+    "page": 48,
+    "bottom": 677.7,
+    "blank_bottom": 92.3,
+    "first": "，要求登记真实身份模板并在独立样本上评估。区域 深度有效不等于识别到了TonyPi；颜色候选也不能替代身份连续性验证。源码和合成 演练已提供，真实目标识别、导航"
+  },
+  {
+    "page": 49,
+    "bottom": 764.6,
+    "blank_bottom": 5.4,
+    "first": "式的关键接口与默认边界 项目 源码或配置对应关系 示例前车与后车 前车/tb3/amcl_pose；后车命名空间tb4 目标来源 target_source:="
+  },
+  {
+    "page": 50,
+    "bottom": 747.5,
+    "blank_bottom": 22.5,
+    "first": "许可和扫描时效，防止仅停止更新目标而旧速度仍被执 行。 导航状态ABORTED、REJECTED 或LOST 会锁定失败，等待排故或重置。任务 状态为done "
+  },
+  {
+    "page": 51,
+    "bottom": 728.9,
+    "blank_bottom": 41.1,
+    "first": "能说明 相机链 历史恢复检查连续取得15 帧 640 × 480 新图像 说明当次取流恢复；不保证 持续运动不掉线 TurtleBot 基础 小组确认底盘启动与"
+  },
+  {
+    "page": 52,
+    "bottom": 755.8,
+    "blank_bottom": 14.2,
+    "first": "；破折号表示未测，不表示零 项目 样本数 结果 证据编号 标记距离误差 待测 — 待填写 满载单步距离/偏航 待测 — 待填写 人形完整路线成功率 待测 — 待"
+  },
+  {
+    "page": 53,
+    "bottom": 603.1,
+    "blank_bottom": 166.9,
+    "first": " 至tb4 命名空间顺序。因此，下面的图像用于验证现场现象， 算法归因以代码和运行配置为准。 9.5.2 起始准备与持物状态 图23将准备阶段与后续抱物阶段并列"
+  },
+  {
+    "page": 54,
+    "bottom": 773.4,
+    "blank_bottom": -3.4,
+    "first": "s，围挡内的抱物运行画面 (b) V196：196 s，后续通道位置 图24: 通道内的异构平台运行场景；不据透视图估计米制间距。 两帧说明真实围挡与机器人共同"
+  },
+  {
+    "page": 55,
+    "bottom": 674.9,
+    "blank_bottom": 95.1,
+    "first": "是源码状态转换具有现场调试对应物的证据，不能替代 原始decisions.csv，也不据屏摄数字计算距离误差或控制周期。电脑显示的系统日期、 终端时刻与视频相对"
+  },
+  {
+    "page": 56,
+    "bottom": 773.7,
+    "blank_bottom": -3.7,
+    "first": "持的结论及剩余证据 问题 本次已获得 仍需材料 TonyPi 抱物运行 V133、V165、V196 等现场帧 全过程日志及掉落、碰撞核验 标记状态机 V184"
+  },
+  {
+    "page": 57,
+    "bottom": 738.7,
+    "blank_bottom": 31.3,
+    "first": "tps://github.com/yky666/intelligent_robot_system．本次 代码核对基线：7bbf588，后续修改见版本历史。 [3"
+  },
+  {
+    "page": 58,
+    "bottom": 773.4,
+    "blank_bottom": -3.4,
+    "first": "道路 humanoid/scripts/competition.py，lane_control.py，la ne_trial.py 方式二入口 turtlebo"
+  },
+  {
+    "page": 59,
+    "bottom": 763.6,
+    "blank_bottom": 6.4,
+    "first": "参数版本、每次试验记录与连续运行证据。 3. 将合成测试与实测结果分开，填入样本数、失败次数及实际验收结论。 4. 核对四种方式的独立性、任务状态适配及终点停靠"
+  },
+  {
+    "page": 60,
+    "bottom": 773.0,
+    "blank_bottom": -3.0,
+    "first": "e、dict 是三种不同返回类型。调用者先区分类型再访问距离，不 能用if obs 把no-camera 字符串误当成有效观测。 源码依据：humanoid/m"
+  },
+  {
+    "page": 61,
+    "bottom": 773.0,
+    "blank_bottom": -3.0,
+    "first": "t_status('phase %d: walking to marker %s (%s at %.0f cm ... 306 | while True: 30"
+  },
+  {
+    "page": 62,
+    "bottom": 773.0,
+    "blank_bottom": -3.0,
+    "first": "止条件 按side 固定方向逐次转动并观察nxt。相机断流时等待，得到有效下一码观测即返 回True；次数耗尽进入pause。 看到下一码不要求中心误差已经很小"
+  },
+  {
+    "page": 63,
+    "bottom": 768.8,
+    "blank_bottom": 1.2,
+    "first": "self.wait_running() 252 | self.set_status(why + '; headless, stopping') 253 | se"
+  },
+  {
+    "page": 64,
+    "bottom": 773.0,
+    "blank_bottom": -3.0,
+    "first": "v2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if frame.ndim == 3 e ... 64 | g = cv2.Gau"
+  },
+  {
+    "page": 65,
+    "bottom": 759.0,
+    "blank_bottom": 11.0,
+    "first": "cv2.Rodrigues(rvec) 108 | normal = R[:, 2] # marker normal (towards the ... 109 "
+  },
+  {
+    "page": 66,
+    "bottom": 773.0,
+    "blank_bottom": -3.0,
+    "first": "t/follow2/multi_robot_following/src/competition_core/planning.py，起始行46。摘 录中长行明确省"
+  },
+  {
+    "page": 67,
+    "bottom": 773.4,
+    "blank_bottom": -3.4,
+    "first": "执行顺序 以任务、目标、定位、地图和TF 守卫过滤输入，再检查距离、轨迹和目标足迹； block 会撤销许可并取消导航。 每次只显示首个失败原因；并行故障应从原"
+  },
+  {
+    "page": 68,
+    "bottom": 773.0,
+    "blank_bottom": -3.0,
+    "first": "点小变化；不能从RGB-D 版本的need_goal 代码推 断地图版本也有相同最终目标修正。 源码依据：turtlebot/follow2/multi_rob"
+  },
+  {
+    "page": 69,
+    "bottom": 769.0,
+    "blank_bottom": 1.0,
+    "first": " run(self): 79 | while not rospy.is_shutdown(): 80 | with self.lock: 81 | self.p"
+  },
+  {
+    "page": 70,
+    "bottom": 768.5,
+    "blank_bottom": 1.5,
+    "first": "| pub.publish(state if last is not None and 0 <= clock() - last ... 58 | finally"
+  },
+  {
+    "page": 71,
+    "bottom": 773.0,
+    "blank_bottom": -3.0,
+    "first": "层 静态地图负责场地围挡，实时扫描负责补充动态占据。robot_radius 与infla- tion_radius 对应不同几何作用；不能只为让窄道规划成功而"
+  },
+  {
+    "page": 72,
+    "bottom": 768.3,
+    "blank_bottom": 1.7,
+    "first": "g=\"amcl\" type=\"amcl\" name=\"amcl\" output=\"screen\"> 14 | <param name=\"global_frame"
+  },
+  {
+    "page": 73,
+    "bottom": 769.0,
+    "blank_bottom": 1.0,
+    "first": "ame=\"marker_id\" value=\"$(arg marker_id)\" /> 16 | <param name=\"map_frame\" value=\""
+  },
+  {
+    "page": 74,
+    "bottom": 702.4,
+    "blank_bottom": 67.6,
+    "first": "t/follow2/multi_robot_following/launch/mission_bridge.launch；基线7bbf588。以下 为配置摘录，"
+  },
+  {
+    "page": 75,
+    "bottom": 469.8,
+    "blank_bottom": 300.2,
+    "first": "源与结论范围。 资料类型 可复现输入 结论范围 状态转换图 marker_route 控制流 阶段、守卫、失败出口与模式差 异 标记模板/位差 markers."
+  }
+]

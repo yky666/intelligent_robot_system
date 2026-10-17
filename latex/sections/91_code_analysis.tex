@@ -1,0 +1,616 @@
+\section{关键实现摘录与可执行契约}
+\subsection{最新路线的执行资源与首帧衔接}
+目标刻度、锁臂字典与停止事件作为输入；只在动作帧边界检查stop\_ev。首帧时长按姿态跳变延长，后续帧沿用数据库。
+
+该函数更新的是已发送目标pose，不是每帧编码器回传。首帧平滑不等于动力学稳定。放置前解除锁臂是调用方责任。
+\source{\code{humanoid/maze_route/marker_route.py}，起始行130。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+ 130 |     def play(self, name, lock, stop_ev):
+ 131 |         with closing(sqlite3.connect('file:%s?mode=ro' % (ACTIONS / (name   ...
+ 132 |             frames = db.execute('select * from ActionGroup order by "Index" ...
+ 133 |         for k, f in enumerate(frames):
+ 134 |             if stop_ev.is_set():
+ 135 |                 log.warning('%s interrupted after frame %d/%d', name, k, le ...
+ 136 |                 return False
+ 137 |             target = {i: lock.get(i, f[1 + i]) for i in SERVOS}
+ 138 |             ms = f[1]
+ 139 |             if k == 0 and (self.pose is None or max(abs(target[i] - self.p  ...
+ 140 |                 ms = max(ms, BRIDGE_MS)
+ 141 |             if not self.fake:
+ 142 |                 self.board.bus_servo_set_position(ms / 1000, [[i, target[i  ...
+ 143 |             self.pose = target
+ 144 |             time.sleep(ms / 1000)
+ 145 |         return True
+ 146 | 
+ 147 | 
+ 148 | # ---------------------------------------------------------------- vision
+ 149 | class Eyes:
+ 150 |     """Camera thread: latest frame + marker detections, with a sequence num ...
+ 151 | 
+ 152 |     def __init__(self):
+ 153 |         import robust_camera
+ 154 |         p = np.load(CALIB)
+ 155 |         self.det = markers.MarkerDetector(p['mtx_array'], p['dist_array'])
+ 156 |         self.cam = robust_camera.Camera()
+ 157 |         self.cam.camera_open()
+ 158 |         self.lock = threading.Lock()
+ 159 |         self.frame, self.found, self.seq = None, {}, 0
+\end{CodeBlock}
+\subsection{新帧契约与多数可见}
+look取得新seq后才能累计帧数，目标至少在多数帧出现。输入相机本身新鲜度由robust\_camera保证，当前函数不伪造时间戳。
+
+no-camera、None、dict是三种不同返回类型。调用者先区分类型再访问距离，不能用if obs把no-camera字符串误当成有效观测。
+\source{\code{humanoid/maze_route/marker_route.py}，起始行180。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+ 180 |     def look(self, target, n=LOOK_FRAMES, timeout=2.0):
+ 181 |         """Median measurement of `target` over n fresh frames, or None."""
+ 182 |         _, _, seq0 = self.latest()
+ 183 |         seen, frames, end = [], 0, time.monotonic() + timeout
+ 184 |         while frames < n and time.monotonic() < end:
+ 185 |             _, found, seq = self.latest()
+ 186 |             if seq > seq0:
+ 187 |                 seq0, frames = seq, frames + 1
+ 188 |                 if target in found:
+ 189 |                     seen.append(found[target])
+ 190 |             time.sleep(0.01)
+ 191 |         self.last_stats = (len(seen), frames)
+ 192 |         if frames < n:
+ 193 |             return 'no-camera'
+ 194 |         if len(seen) * 2 <= n:          # need a majority of the frames
+ 195 |             return None
+ 196 |         return dict(dist_cm=float(np.median([m['dist_cm'] for m in seen])),
+ 197 |                     bearing_deg=float(np.median([m['bearing_deg'] for m in  ...
+ 198 |                     yaw_deg=float(np.median([m['yaw_deg'] for m in seen if  ...
+ 199 |                     seen=len(seen), of=frames)
+ 200 | 
+ 201 |     def close(self):
+ 202 |         self.quit.set()
+ 203 |         self.cam.camera_close()
+ 204 | 
+ 205 | 
+\end{CodeBlock}
+\subsection{路线初始化与阶段计数复位}
+等待启动事件，按可选grab动作建立锁臂，再遍历ROUTE。每一段的目标、后续转向、步数和丢失记录独立初始化。
+
+跳过grab仍读取grab\_final\_v2尾帧，因此需物理就位；不是允许任意姿态起跑。phase只在转角成功返回后推进。
+\source{\code{humanoid/maze_route/marker_route.py}，起始行283。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+ 283 |     def _run(self):
+ 284 |         a = self.a
+ 285 |         if not self.wait_running():
+ 286 |             return
+ 287 |         if a.grab:
+ 288 |             self.set_status('grabbing (grab_final_v2)')
+ 289 |             if not self.act('grab_final_v2'):
+ 290 |                 return
+ 291 |         # hands as at the end of grab_final_v2: same values the action copi ...
+ 292 |         with closing(sqlite3.connect('file:%s?mode=ro' % (ACTIONS / 'grab_  ...
+ 293 |             last = db.execute('select * from ActionGroup order by "Index"   ...
+ 294 |         self.lock_arms = {i: last[1 + i] for i in ARMS}
+ 295 |         log.info('arms locked at %s', self.lock_arms)
+ 296 | 
+ 297 |         for self.phase, (target, then) in enumerate(ROUTE):
+ 298 |             steps = turns = misses = blind = 0
+ 299 |             progress = []            # distance to the target before each w ...
+ 300 |             seen_once = False
+ 301 |             prev_walk_obs = None     # marker seen right before the last wa ...
+ 302 |             last_seen = None         # latest measurement of the target
+ 303 |             creep = 0.0              # predicted heading error while walkin ...
+ 304 |             limit = a.turn_cm if then != 'stop' else a.stop_cm
+ 305 |             self.set_status('phase %d: walking to marker %s (%s at %.0f cm  ...
+ 306 |             while True:
+ 307 |                 if self.stop_ev.is_set():
+ 308 |                     return
+ 309 |                 obs = self.eyes.look(target)
+ 310 |                 if obs == 'no-camera':
+ 311 |                     # The USB camera drops out and comes back by itself: stand
+ 312 |                     # still and wait for it rather than walking blind.
+ 313 |                     self.record(target, None, 'wait', 'no camera')
+ 314 |                     t0 = time.monotonic()
+ 315 |                     while self.eyes.look(target, n=1, timeout=1) == 'no-cam ...
+ 316 |                         if self.stop_ev.is_set():
+ 317 |                             return
+ 318 |                         if int(time.monotonic() - t0) % 5 == 0:
+ 319 |                             self.set_status('no camera frames for %.0f s;   ...
+\end{CodeBlock}
+\subsection{目标不可见、近距推断与真实故障}
+当前输入缺目标而最近观测足够近且居中时，构造lost\_close并将距离截到limit。它把一次失锁事件解释为可能抵近。
+
+这不是新测距。图像遮挡也可能满足同样条件，必须记录lost\_close，不与正常观测到达混合统计。无相机新帧在此前另行处理。
+\source{\code{humanoid/maze_route/marker_route.py}，起始行331。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+ 331 |                 arrived_blind = (obs is None and last_seen is not None and
+ 332 |                                  last_seen['dist_cm'] <= limit + a.lost_nea ...
+ 333 |                                  abs(last_seen['bearing_deg']) <= max(a.cen ...
+ 334 |                 if arrived_blind:
+ 335 |                     log.info('%s lost at the goal (last seen %.0f cm, %+.0  ...
+ 336 |                              target, last_seen['dist_cm'], last_seen['beari ...
+ 337 |                     obs = dict(last_seen, dist_cm=min(last_seen['dist_cm']  ...
+ 338 |                 if obs:
+ 339 |                     seen_once, misses = True, 0
+ 340 |                     if not obs.get('lost_close'):
+ 341 |                         last_seen = obs
+ 342 |                     if obs['dist_cm'] <= limit:
+ 343 |                         if then == 'stop':
+ 344 |                             self.record(target, obs, 'stop', 'reached')
+ 345 |                             self.set_status('reached marker C at %.0f cm:   ...
+ 346 |                             if a.release:
+ 347 |                                 time.sleep(CORNER_PAUSE_S)
+ 348 |                                 self.set_status('putting the cube down (put ...
+ 349 |                                 self.lock_arms = {}          # put_down mo  ...
+ 350 |                                 if not self.act('put_down'):
+ 351 |                                     return
+ 352 |                                 self.record(target, None, 'put_down', 'done')
+ 353 |                                 self.set_status('reached marker C, cube put ...
+ 354 |                             return
+ 355 |                         self.record(target, obs, 'corner', 'turn %s' % then)
+ 356 |                         if not self.corner(then, ROUTE[self.phase + 1][0],  ...
+ 357 |                             return
+ 358 |                         break
+ 359 |                     step = float(np.median(self.turn_steps[-5:]))
+ 360 |                     need = max(a.centre_deg, 0.6 * step)
+ 361 |                     if abs(obs['bearing_deg']) > need:
+ 362 |                         side = 'right' if obs['bearing_deg'] > 0 else 'left'
+ 363 |                         turns += 1
+ 364 |                         self.record(target, obs, 'turn_' + side,
+ 365 |                                     'centre %.1f deg (> %.1f, step ~%.0f)'  ...
+ 366 |                         if turns > a.max_centre_turns:
+ 367 |                             turns = 0
+ 368 |                             if not self.pause('too many centring turns for  ...
+ 369 |                                 return
+\end{CodeBlock}
+\subsection{转角循环的可见性终止条件}
+按side固定方向逐次转动并观察nxt。相机断流时等待，得到有效下一码观测即返回True；次数耗尽进入pause。
+
+看到下一码不要求中心误差已经很小，下一段继续纠偏。暂停恢复后重新试一轮；无头失败会退出而不是永远等待无人可按的S。
+\source{\code{humanoid/maze_route/marker_route.py}，起始行428。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+ 428 |     def corner(self, side, nxt, at=None):
+ 429 |         """Keep turning (300 ms buffers) until the next marker is in view; only
+ 430 |         then walk on. Centring continues in the walk loop."""
+ 431 |         while True:
+ 432 |             for k in range(1, self.a.max_corner_turns + 1):
+ 433 |                 self.set_status('corner: turn %s %d, looking for %s' % (sid ...
+ 434 |                 time.sleep(CORNER_PAUSE_S)            # buffer before each  ...
+ 435 |                 if not self.act('catch_ball_turn_' + side):
+ 436 |                     return False
+ 437 |                 time.sleep(CORNER_PAUSE_S)            # and after it, befor ...
+ 438 |                 obs = self.eyes.look(nxt)
+ 439 |                 t0 = time.monotonic()
+ 440 |                 while obs == 'no-camera':             # do not keep turning ...
+ 441 |                     if self.stop_ev.is_set():
+ 442 |                         return False
+ 443 |                     self.set_status('corner: no camera frames for %.0f s;   ...
+ 444 |                     if time.monotonic() - t0 > self.a.camera_wait:
+ 445 |                         break
+ 446 |                     obs = self.eyes.look(nxt)
+ 447 |                 if isinstance(obs, dict):
+ 448 |                     self.record(nxt, obs, 'found', 'after %d turn(s)' % k)
+ 449 |                     return True
+ 450 |                 self.record(nxt, None, 'turn_' + side, 'corner turn %d, %s  ...
+ 451 |             self.record(nxt, None, 'pause', 'next marker not found')
+ 452 |             if not self.pause('marker %s not found after %d turns' % (nxt,  ...
+ 453 |                 return False      # resumed: keep turning and looking
+ 454 | 
+ 455 | 
+ 456 | # ---------------------------------------------------------------- display
+ 457 | def overlay(img, found, target, status):
+ 458 |     h, w = img.shape[:2]
+ 459 |     markers.draw(img, found, target)
+ 460 |     cv2.line(img, (w // 2, 0), (w // 2, h), (255, 255, 255), 1)
+ 461 |     cv2.rectangle(img, (0, 0), (w, 24), (0, 0, 0), -1)
+ 462 |     cv2.putText(img, status[:80], (6, 17), cv2.FONT_HERSHEY_SIMPLEX, .5, (2 ...
+ 463 |     return img
+\end{CodeBlock}
+\subsection{暂停事件的交互与无头差异}
+interactive=True时清除go并等待恢复；否则设置stop\_ev结束。wait\_running在等待go同时检查停止事件，避免退出死锁。
+
+P暂停只影响后续动作许可，已经发送的一帧或动作可能完成。Q置go用于释放等待，不代表继续行走。
+\source{\code{humanoid/maze_route/marker_route.py}，起始行246。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+ 246 |     def pause(self, why):
+ 247 |         """Window: wait for S. Headless: nobody can resume, so end the run."""
+ 248 |         if self.interactive:
+ 249 |             self.set_status(why + '; paused, press S to retry')
+ 250 |             self.go.clear()
+ 251 |             return self.wait_running()
+ 252 |         self.set_status(why + '; headless, stopping')
+ 253 |         self.stop_ev.set()
+ 254 |         return False
+ 255 | 
+ 256 |     def wait_running(self):
+ 257 |         while not self.go.is_set():
+ 258 |             if self.stop_ev.wait(0.1):
+ 259 |                 return False
+ 260 |         return not self.stop_ev.is_set()
+ 261 | 
+ 262 |     def act(self, name, count=1):
+ 263 |         for _ in range(count):
+ 264 |             if not self.wait_running():
+ 265 |                 return False
+ 266 |             if self.a.dry_run:
+ 267 |                 log.info('[dry-run] would play %s', name)
+ 268 |                 time.sleep(0.5)
+ 269 |             elif not self.servos.play(name, self.lock_arms, self.stop_ev):
+ 270 |                 return False
+ 271 |         time.sleep(SETTLE_S)
+\end{CodeBlock}
+\subsection{模板采样与黑边合法性}
+透视展开固定尺寸后Otsu二值化，只采每个格子的内部区域，输出9乘9数据和边框白格计数。
+
+黑边和数据位误差是两类门限。角点顺序与透视矩阵必须一致，不能只比较25位内容而跳过外边框条件。
+\source{\code{humanoid/maze_route/markers.py}，起始行41。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+  41 | def _read(gray, quad):
+  42 |     n = GRID * CELL_PX
+  43 |     M = cv2.getPerspectiveTransform(quad.astype(np.float32),
+  44 |                                     np.float32([[0, 0], [n, 0], [n, n], [0, ...
+  45 |     w = cv2.warpPerspective(gray, M, (n, n))
+  46 |     _, b = cv2.threshold(w, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+  47 |     m = CELL_PX // 4
+  48 |     cells = np.array([[b[r*CELL_PX + m:(r+1)*CELL_PX - m, c*CELL_PX + m:(c  ...
+  49 |                        for c in range(GRID)] for r in range(GRID)], np.uint8)
+  50 |     ring = np.ones((GRID, GRID), bool)
+  51 |     ring[BORDER:GRID - BORDER, BORDER:GRID - BORDER] = False
+  52 |     return cells, int(cells[ring].sum())
+  53 | 
+  54 | 
+  55 | class MarkerDetector:
+\end{CodeBlock}
+\subsection{候选筛选、模板匹配与重复检测}
+从灰度图、轮廓到凸四边形，检查尺度和拉伸，然后遍历模板四方向最少差异。重复同ID优先低错误、较大边长。
+
+此处是局部摘录；候选几何与数据码匹配共同决定识别。程序不属于通用二维码识别库，替换标签字典需改变完整契约。
+\source{\code{humanoid/maze_route/markers.py}，起始行62。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+  62 |     def detect(self, frame):
+  63 |         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if frame.ndim == 3 e ...
+  64 |         g = cv2.GaussianBlur(gray, (3, 3), 0)
+  65 |         bw = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2  ...
+  66 |         contours, _ = cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_ ...
+  67 |         found = {}
+  68 |         for c in contours:
+  69 |             peri = cv2.arcLength(c, True)
+  70 |             if peri < 4 * self.min_side:
+  71 |                 continue
+  72 |             ap = cv2.approxPolyDP(c, 0.04 * peri, True)
+  73 |             if len(ap) != 4 or not cv2.isContourConvex(ap):
+  74 |                 continue
+  75 |             q = _order(ap.reshape(4, 2).astype(np.float32))
+  76 |             sides = [np.linalg.norm(q[i] - q[(i + 1) % 4]) for i in range(4)]
+  77 |             if min(sides) < self.min_side or max(sides) > 4 * min(sides):
+  78 |                 continue
+  79 |             cells, border_white = _read(gray, q)
+  80 |             if border_white > MAX_BORDER_WHITE:
+  81 |                 continue
+  82 |             data = cells[BORDER:GRID - BORDER, BORDER:GRID - BORDER]
+  83 |             best = None
+  84 |             for mid, rots in _ROT.items():
+  85 |                 for r, t in enumerate(rots):
+  86 |                     err = int((data != t).sum())
+  87 |                     if best is None or err < best[0]:
+  88 |                         best = (err, mid, r)
+  89 |             err, mid, rot = best
+  90 |             if err > MAX_DATA_ERR:
+  91 |                 continue
+  92 |             m = self._measure(q)
+  93 |             m.update(id=mid, err=err, rot=rot * 90, corners=q, side_px=flo  ...
+  94 |             # several contours (inner/outer edge) can hit one marker: keep  ...
+  95 |             if mid not in found or (err, -m['side_px']) < (found[mid]['err  ...
+  96 |                 found[mid] = m
+  97 |         return found
+  98 | 
+  99 |     def _measure(self, q):
+ 100 |         ok, rvec, tvec = cv2.solvePnP(self.obj, q.reshape(-1, 1, 2), self.K ...
+ 101 |                                       flags=cv2.SOLVEPNP_IPPE_SQUARE)
+ 102 |         cx, cy = q.mean(0)
+ 103 |         # bearing from the undistorted image position of the marker centre
+ 104 |         u = cv2.undistortPoints(np.float32([[[cx, cy]]]), self.K, self.dist ...
+ 105 |         bearing = math.degrees(math.atan(u[0]))
+ 106 |         t = tvec.ravel()
+ 107 |         R, _ = cv2.Rodrigues(rvec)
+ 108 |         normal = R[:, 2]                      # marker normal (towards the  ...
+\end{CodeBlock}
+\subsection{PnP输出的量纲与使用边界}
+已知四角、内参和畸变进入IPPE正方形PnP；距离为t范数，方位由去畸变中心计算，yaw由法向计算。
+
+PnP失败时dist/yaw可能为空；主线假设有效检测。斜距与水平距需同定义标定，不把图像方位误差当真实转角。
+\source{\code{humanoid/maze_route/markers.py}，起始行99。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+  99 |     def _measure(self, q):
+ 100 |         ok, rvec, tvec = cv2.solvePnP(self.obj, q.reshape(-1, 1, 2), self.K ...
+ 101 |                                       flags=cv2.SOLVEPNP_IPPE_SQUARE)
+ 102 |         cx, cy = q.mean(0)
+ 103 |         # bearing from the undistorted image position of the marker centre
+ 104 |         u = cv2.undistortPoints(np.float32([[[cx, cy]]]), self.K, self.dist ...
+ 105 |         bearing = math.degrees(math.atan(u[0]))
+ 106 |         t = tvec.ravel()
+ 107 |         R, _ = cv2.Rodrigues(rvec)
+ 108 |         normal = R[:, 2]                      # marker normal (towards the  ...
+ 109 |         # Robot heading against the wall the marker hangs on: 0 = square to it,
+ 110 |         # + = robot turned RIGHT of square. Uses only the normal's horizont ...
+ 111 |         # in camera terms so the head pitch does not inflate it.
+ 112 |         yaw = -math.degrees(math.atan2(-normal[0], math.hypot(normal[1], n  ...
+ 113 |         return dict(dist_cm=float(np.linalg.norm(t)) if ok else None, x_cm  ...
+ 114 |                     bearing_deg=bearing, yaw_deg=yaw, centre=(float(cx), fl ...
+ 115 | 
+ 116 | 
+ 117 | def draw(frame, found, target=None):
+ 118 |     for mid, m in found.items():
+ 119 |         colour = (0, 255, 0) if mid == target else (0, 200, 255)
+ 120 |         q = m['corners'].astype(int)
+ 121 |         cv2.polylines(frame, [q], True, colour, 3)
+\end{CodeBlock}
+\subsection{轨迹点接受、去噪与跳变拒绝}
+有限点进入轨迹，小于spacing不追加，超过jump\_limit拒绝，长度超max\_length删除最早点。默认0.08/0.8/20的单位均为米。
+
+返回True可能仅表示小位移无需追加；调用者仍可能更新目标时效。拒绝跳变不会产生新的测量点，不能用插值掩盖定位突变。
+\source{\code{turtlebot/follow2/multi_robot_following/src/competition_core/planning.py}，起始行29。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+  29 |     def add(self, x, y):
+  30 |         p = (float(x), float(y))
+  31 |         if not all(finite(v) for v in p):
+  32 |             return False
+  33 |         if self.points:
+  34 |             step = distance(self.points[-1], p)
+  35 |             if step > self.jump_limit:
+  36 |                 return False
+  37 |             if step < self.spacing:
+  38 |                 return True
+  39 |         self.points.append(p)
+  40 |         length = sum(distance(a, b) for a, b in zip(self.points, self.point ...
+  41 |         while len(self.points) > 2 and length > self.max_length:
+  42 |             length -= distance(self.points[0], self.points[1])
+  43 |             self.points.pop(0)
+  44 |         return True
+  45 | 
+  46 |     def behind(self, gap):
+  47 |         if gap < 0:
+  48 |             raise ValueError('gap must be nonnegative')
+  49 |         remaining = gap
+  50 |         for i in range(len(self.points) - 1, 0, -1):
+  51 |             a, b = self.points[i - 1], self.points[i]
+\end{CodeBlock}
+\subsection{沿弧长回退与方向生成}
+从最新边向前遍历，落在一段内时按剩余弧长插值，并返回该段正向切线atan2。历史不足返回None。
+
+该函数不是路径规划器，只生成目标点。move\_base仍可重规划；后车实际轨迹是否切角必须测量。
+\source{\code{turtlebot/follow2/multi_robot_following/src/competition_core/planning.py}，起始行46。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+  46 |     def behind(self, gap):
+  47 |         if gap < 0:
+  48 |             raise ValueError('gap must be nonnegative')
+  49 |         remaining = gap
+  50 |         for i in range(len(self.points) - 1, 0, -1):
+  51 |             a, b = self.points[i - 1], self.points[i]
+  52 |             length = distance(a, b)
+  53 |             if length >= remaining and length > 0:
+  54 |                 ratio = remaining / length
+  55 |                 return (b[0] + ratio * (a[0] - b[0]),
+  56 |                         b[1] + ratio * (a[1] - b[1]),
+  57 |                         math.atan2(b[1] - a[1], b[0] - a[0]))
+  58 |             remaining -= length
+  59 |         return None  # do not drive toward a target before enough trail exists
+  60 | 
+  61 | 
+  62 | def grid_clear(data, width, height, resolution, origin_x, origin_y,
+\end{CodeBlock}
+\subsection{栅格足迹与未知区域拒绝}
+先验证地图结构，按原点旋转转换到网格，补偿半格对角线后检查足迹。未知、越界、高占据均阻塞。
+
+输入是OccupancyGrid的-1和0至100，不能与内部costmap的0至255混用。目标可行不代表全路径连通。
+\source{\code{turtlebot/follow2/multi_robot_following/src/competition_core/planning.py}，起始行62。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+  62 | def grid_clear(data, width, height, resolution, origin_x, origin_y,
+  63 |                origin_yaw, x, y, radius, threshold=65):
+  64 |     """Conservative circular footprint check including cell area, unknown = ...
+  65 | 
+  66 |     OccupancyGrid values are 0..100 (not costmap's internal 0..255).
+  67 |     """
+  68 |     if resolution <= 0 or width <= 0 or height <= 0 or len(data) != width * ...
+  69 |         return False
+  70 |     dx, dy = x - origin_x, y - origin_y
+  71 |     c, s = math.cos(origin_yaw), math.sin(origin_yaw)
+  72 |     gx, gy = c * dx + s * dy, -s * dx + c * dy
+  73 |     padding = radius + resolution * math.sqrt(2) / 2
+  74 |     ix0, ix1 = int(math.floor((gx - padding) / resolution)), int(math.floo  ...
+  75 |     iy0, iy1 = int(math.floor((gy - padding) / resolution)), int(math.floo  ...
+  76 |     if ix0 < 0 or iy0 < 0 or ix1 >= width or iy1 >= height:
+  77 |         return False
+  78 |     for iy in range(iy0, iy1 + 1):
+  79 |         for ix in range(ix0, ix1 + 1):
+  80 |             cx, cy = (ix + 0.5) * resolution, (iy + 0.5) * resolution
+  81 |             if math.hypot(cx - gx, cy - gy) <= padding:
+  82 |                 value = data[iy * width + ix]
+  83 |                 if value < 0 or value >= threshold:
+  84 |                     return False
+  85 |     return True
+  86 | 
+  87 | 
+  88 | def localization_ok(covariance, xy_limit, yaw_limit):
+  89 |     return len(covariance) == 36 and all(
+  90 |         finite(covariance[i]) and 0 <= covariance[i] <= limit
+  91 |         for i, limit in ((0, xy_limit), (7, xy_limit), (35, yaw_limit)))
+  92 | 
+  93 | 
+\end{CodeBlock}
+\subsection{地图跟随器的守卫执行顺序}
+以任务、目标、定位、地图和TF守卫过滤输入，再检查距离、轨迹和目标足迹；block会撤销许可并取消导航。
+
+每次只显示首个失败原因；并行故障应从原始遥测复核。ABORTED等锁定与目标暂失的可恢复等待不同。
+\source{\code{turtlebot/follow2/multi_robot_following/scripts/map_follower.py}，起始行108。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+ 108 |     def step(self):
+ 109 |         now = rospy.Time.now().to_sec()
+ 110 |         # Publisher emits this every cycle; velocity gate has a separate wa ...
+ 111 |         if self.finished or self.failed:
+ 112 |             return self.block('finished' if self.finished else 'navigation  ...
+ 113 |         if self.estop or self.mission not in ('carrying', 'releasing', 'do  ...
+ 114 |             return self.block('mission_stopped')
+ 115 |         if not fresh(self.target_stamp, now, self.target_timeout):
+ 116 |             return self.block('target_lost_hold_position')
+ 117 |         if not self.loc_good or not fresh(self.loc_stamp, now, 2.0):
+ 118 |             return self.block('localization_invalid')
+ 119 |         if self.grid is None or not fresh(self.grid_stamp, now, 3.0):
+ 120 |             return self.block('costmap_missing_or_stale')
+ 121 |         try:
+ 122 |             transform = self.buffer.lookup_transform(self.frame, self.base  ...
+ 123 |             if not fresh(transform.header.stamp.to_sec(), now, self.tf_time ...
+ 124 |                 return self.block('base_tf_stale')
+ 125 |             t = transform.transform.translation
+ 126 |             robot = (t.x, t.y)
+ 127 |             if not all(finite(v) for v in robot):
+ 128 |                 return self.block('base_tf_invalid')
+ 129 |         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf  ...
+ 130 |             return self.block('base_tf_missing')
+ 131 |         if distance(robot, self.target) < self.min_gap:
+ 132 |             return self.block('leader_too_close')
+ 133 |         point = self.trail.behind(self.gap)
+ 134 |         if point is None:
+ 135 |             return self.block('waiting_for_leader_trail')
+ 136 |         if self.mission == 'done' and distance(robot, point) <= self.finish ...
+ 137 |             self.finished = True
+ 138 |             return self.block('finished')
+ 139 |         grid = self.grid
+ 140 |         origin = grid.info.origin
+ 141 |         if grid.header.frame_id.lstrip('/') != self.frame.lstrip('/') or no ...
+ 142 |                 grid.data, grid.info.width, grid.info.height, grid.info.res ...
+ 143 |                 origin.position.x, origin.position.y, yaw(origin.orientation),
+ 144 |                 point[0], point[1], self.radius):
+ 145 |             return self.block('follow_goal_blocked')
+ 146 |         # Do not send repeated goals near the current goal (avoids preempti ...
+ 147 |         state = self.client.get_state() if self.goal is not None else None
+ 148 |         if state in (4, 5, 9):  # ABORTED, REJECTED, LOST
+ 149 |             self.failed = True
+ 150 |             return self.block('navigation_failed_reset_required')
+ 151 |         if not self.client.wait_for_server(rospy.Duration(0.01)):
+ 152 |             return self.block('move_base_unavailable')
+ 153 |         if self.goal is None or (now - self.goal_time >= self.goal_interva  ...
+ 154 |             goal = MoveBaseGoal()
+\end{CodeBlock}
+\subsection{目标更新与导航失败状态}
+首次目标立即发，之后默认间隔至少1秒且位移至少0.25米。导航状态4、5、9锁定失败。
+
+普通目标更新阈值可能遗漏终点小变化；不能从RGB-D版本的need\_goal代码推断地图版本也有相同最终目标修正。
+\source{\code{turtlebot/follow2/multi_robot_following/scripts/map_follower.py}，起始行146。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+ 146 |         # Do not send repeated goals near the current goal (avoids preempti ...
+ 147 |         state = self.client.get_state() if self.goal is not None else None
+ 148 |         if state in (4, 5, 9):  # ABORTED, REJECTED, LOST
+ 149 |             self.failed = True
+ 150 |             return self.block('navigation_failed_reset_required')
+ 151 |         if not self.client.wait_for_server(rospy.Duration(0.01)):
+ 152 |             return self.block('move_base_unavailable')
+ 153 |         if self.goal is None or (now - self.goal_time >= self.goal_interva  ...
+ 154 |             goal = MoveBaseGoal()
+ 155 |             goal.target_pose.header.frame_id = self.frame
+ 156 |             goal.target_pose.header.stamp = rospy.Time.now()
+ 157 |             goal.target_pose.pose.position.x = point[0]
+ 158 |             goal.target_pose.pose.position.y = point[1]
+ 159 |             goal.target_pose.pose.orientation.z = math.sin(point[2] / 2)
+ 160 |             goal.target_pose.pose.orientation.w = math.cos(point[2] / 2)
+ 161 |             self.client.send_goal(goal)
+ 162 |             self.goal = point
+ 163 |             self.goal_time = now
+ 164 |         self.allowed.publish(True)
+ 165 |         self.status.publish('following')
+ 166 | 
+ 167 | 
+ 168 | if __name__ == '__main__':
+ 169 |     rospy.init_node('map_follower')
+ 170 |     Follower()
+ 171 |     rospy.spin()
+\end{CodeBlock}
+\subsection{独立门控与真实扫描有效性}
+命令、许可、扫描过期或急停即返回零Twist；有限非负线速度才继续检查，转向时扇区扩大。
+
+墙钟线程持续发布而不依赖ROS时钟前进。其他直接发布者会绕过门控，系统必须确保唯一导航速度源。
+\source{\code{turtlebot/follow2/multi_robot_following/scripts/velocity_gate.py}，起始行58。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+  58 |     def output(self):
+  59 |         now = self.clock()
+  60 |         out = Twist()
+  61 |         v, w = self.command.linear.x, self.command.angular.z
+  62 |         if self.estop or not self.allowed or not fresh(self.allowed_stamp,  ...
+  63 |             return out
+  64 |         if not finite(v) or not finite(w) or v < 0:  # no blind reverse wi  ...
+  65 |             return out
+  66 |         if self.require_scan:
+  67 |             scan = self.scan
+  68 |             # Wider sector during rotation; the full footprint stays in cos ...
+  69 |             sector = math.pi / 2 if abs(w) > 0.05 else math.pi / 4
+  70 |             if scan is None or not fresh(self.scan_stamp, now, 0.5) or not  ...
+  71 |                     scan.ranges, scan.angle_min, scan.angle_increment, scan ...
+  72 |                     scan.range_max, self.clearance, sector):
+  73 |                 return out
+  74 |         out.linear.x = clamp(v, self.max_v)
+  75 |         out.angular.z = clamp(w, self.max_w)
+  76 |         return out
+  77 | 
+  78 |     def run(self):
+  79 |         while not rospy.is_shutdown():
+  80 |             with self.lock:
+  81 |                 self.pub.publish(self.output())
+  82 |             time.sleep(0.05)
+  83 | 
+  84 | 
+  85 | if __name__ == '__main__':
+  86 |     rospy.init_node('velocity_gate')
+  87 |     Gate()
+  88 |     rospy.spin()
+\end{CodeBlock}
+\subsection{任务桥的会话与序号契约}
+桥接UDP状态，检查来源IP、session、run\_id、sequence和状态白名单，超过1秒无有效数据发布stopped。
+
+该摘录不意味着最新marker\_route已发送心跳。适配器仍是集成缺口；测试终端carrying是测试输入而非自主协同证据。
+\source{\code{turtlebot/follow2/multi_robot_following/scripts/mission_bridge.py}，起始行16。摘录中长行明确省略，不替代完整源码。}
+\begin{CodeBlock}
+  16 | def main():
+  17 |     rospy.init_node('mission_bridge')
+  18 |     pub = rospy.Publisher('/competition/mission', String, queue_size=1)
+  19 |     address = rospy.get_param('~bind', '0.0.0.0')
+  20 |     port = rospy.get_param('~port', 15000)
+  21 |     allowed_ip = rospy.get_param('~sender_ip', '')
+  22 |     session = rospy.get_param('~session', 'team1')
+  23 |     clock = getattr(time, 'monotonic', time.time)
+  24 |     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  25 |     sock.bind((address, port))
+  26 |     sock.settimeout(0.1)
+  27 |     last = None
+  28 |     state = 'idle'
+  29 |     run_id = None
+  30 |     sequence = -1
+  31 |     valid = ('idle', 'searching', 'grasping', 'verifying_grasp', 'grasp_suc ...
+  32 |              'grasp_failed', 'retrying', 'carrying', 'checking_hold',
+  33 |              'checking_placement', 'releasing', 'verifying_release', 'done  ...
+  34 |     try:
+  35 |         while not rospy.is_shutdown():
+  36 |             try:
+  37 |                 raw, sender = sock.recvfrom(2048)
+  38 |                 data = json.loads(raw.decode('utf-8'))
+  39 |                 if not allowed_ip or sender[0] != allowed_ip or data.get('  ...
+  40 |                     continue
+  41 |                 new_run = data.get('run_id')
+  42 |                 seq = data.get('sequence')
+  43 |                 if not isinstance(new_run, string_types) or not isinstance( ...
+  44 |                     continue
+  45 |                 # A new run is accepted only after the previous run timed out.
+  46 |                 if run_id is not None and run_id != new_run and last is no  ...
+  47 |                     continue
+  48 |                 if new_run != run_id:
+  49 |                     run_id, sequence = new_run, -1
+  50 |                 if seq <= sequence or data.get('state') not in valid:
+  51 |                     continue
+  52 |                 state, last, sequence = data['state'], clock(), seq
+  53 |             except socket.timeout:
+  54 |                 pass
+  55 |             except (ValueError, TypeError, UnicodeError, AttributeError):
+  56 |                 pass
+  57 |             pub.publish(state if last is not None and 0 <= clock() - last   ...
+  58 |     finally:
+  59 |         pub.publish('stopped')
+  60 |         sock.close()
+  61 | 
+  62 | 
+  63 | if __name__ == '__main__':
+\end{CodeBlock}

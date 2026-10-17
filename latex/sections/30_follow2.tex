@@ -1,18 +1,21 @@
-\section{第一组：方式二建图避障跟随}
-\subsection{方案与功能包组织}
+\section{方式二：建图定位与避障跟随}
+\subsection{建图避障跟随的实现总览}
+\subsubsection{方案与功能包组织}
 方式二将“看见目标”与“安全到达跟随位置”分开：相机观测TonyPi背部AR标记，在地图中恢复其位置并积累历史轨迹；随后由导航栈在已知地图和实时障碍约束下生成底盘速度。目标朝向不直接作为跟随方向，避免背贴标签朝向与实际行进方向不一致时生成错误目标。
 
 独立ROS功能包\code{multi_robot_following}位于\code{turtlebot/follow2/}，部署到虚拟机\code{~/catkin_ws/src}。包内包括建图入口、AMCL/move\_base配置、目标源适配、轨迹跟随、速度门控与任务心跳桥，不覆盖原有课程包。
 
-\subsection{沿用课程建图链与地图质量检查}
+\subsubsection{沿用课程建图链与地图质量检查}
 底盘启动与键盘遥控已由小组确认可用：\code{turtlebot_bringup minimal.launch}及\code{turtlebot_teleop keyboard_teleop.launch}。建图优先沿用课程\code{turtlebot_navigation gmapping_demo.launch}，另用课程导航RViz配置查看地图、扫描和TF。该入口已集成部分相机和导航节点，不与新包的建图入口重复启动。
 
 建图时采集里程计和扫描，通过GMapping估计二维栅格地图；完成后使用\code{map_saver}成对保存\code{.yaml}与\code{.pgm}。比赛导航加载固定地图，AMCL估计当前车位姿，move\_base进行规划。场地障碍布局改变需重新建图；从建图切换到定位时，必须停止GMapping，避免与AMCL竞争\code{map -> odom}。
 
 现场曾报告约35\,cm高障碍未在图中稳定出现。不能只按URDF假定镜头高度便认定扫描必然覆盖：应分别检查原始深度图、深度转扫描的采样行与范围、实际安装俯仰、TF、有效近距，以及RViz中\code{/scan}是否已有对应点。若扫描本身漏检，调节地图膨胀层不能补回未观测障碍；若扫描有点而地图无障碍，再排查建图、TF和清除配置。当前尚未提供漏检已解决的完整实测记录。
-\reportphoto{figures/follow2/robot.jpg}{TurtleBot2与Kinect安装}{归档已提供的机器人照片；补充镜头高度、朝向、扫描来源。}
+视频8\,s处可见多台搭载电脑的 TurtleBot2 和现场标签布置，可用于说明实际平台外观。
+\reportphoto{figures/follow2/robot.jpg}{视频8\,s处的 TurtleBot2 平台与现场布置（V008）}{原始视频截图。}
+图中车辆与方式编号尚无法对应，故本图只作为平台实物记录，不把其中某台车认定为方式二实车，也不据画面推算镜头高度或标记尺寸。
 
-\subsection{AR目标观测到地图坐标}
+\subsubsection{AR目标观测到地图坐标}
 方式二默认\code{target_source:=marker}，选取指定ID的ALVAR标记。\code{marker_target.py}验证时间戳、有限数值与量测范围，在观测时刻$t_m$将目标变换到地图：
 \begin{equation}
 {}^{m}T_{\rm target}(t_m)
@@ -22,20 +25,23 @@
 
 另一适配器可订阅前车地图定位位姿，但必须共享地图原点并检查时间戳、跳变和协方差。当前第一组方案以直接观察TonyPi为主；只有确认切换到前车定位模式时，才在实验表中登记该数据源。
 
-\subsection{历史轨迹与沿路径回退的跟随点}
+\subsubsection{历史轨迹与沿路径回退的跟随点}
 \code{Trail}将有效目标位置记录为有界折线$P=(p_0,\dots,p_n)$。默认最小采样间距0.08\,m、最大保留路径长度20\,m、单次跳变上限0.8\,m。跟随距离默认$d_f=0.9$\,m，从最新点沿折线反向累计弧长；若回退点位于$p_{j-1}$与$p_j$之间，令该段长度$\ell_j=\|p_j-p_{j-1}\|$、剩余距离$r$，则
 \begin{equation}
 p_g=p_j+\frac{r}{\ell_j}(p_{j-1}-p_j).
 \end{equation}
 轨迹不足$d_f$时不生成有效目标。与沿目标当前朝向直接平移相比，这种方法保留已观测路径的转角信息。但move\_base仍会在可通行区域平滑或重规划，不能宣称精确重放前车全部轨迹，也不能保证后车永远不抄近路。
-\begin{figure}[htbp]\centering
+\begin{figure}[H]\centering
 \input{figures/trail_following.tex}
 \caption{沿目标历史折线回退生成导航目标；示意图不含真实场地尺度}
 \end{figure}
 
-\subsection{代价地图、DWA与目标可行性}
+历史折线回退沿目标已经走过的路径生成目标点，转角处不会简单沿当前视线把机器人拉向前车。图中回退距离由累计弧长定义，区别于两点直线间距。得到回退点后仍需执行足迹与地图检查，路径几何本身不保证底盘能够安全通过。
+
+
+\subsubsection{代价地图、DWA与目标可行性}
 全局规划依托固定地图及目标点；全局与局部代价地图接收实时扫描，DWA在速度与加速度约束下评估短时轨迹。候选目标在发送前执行圆形足迹栅格检查，越界、未知或高占用栅格均不可进入。足迹、膨胀半径及障碍更新参数必须按真实车体和通道标定，默认值不是经过测量的保证。
-\begin{table}[htbp]\centering\small
+\begin{table}[H]\centering\small
 \caption{方式二部分默认参数（非最终实测值）}
 \begin{tabularx}{\linewidth}{p{52mm}p{22mm}Y}\toprule
 参数 & 默认值 & 作用\\\midrule
@@ -49,7 +55,7 @@ DWA预测时长 & 1.5\,s & 轨迹评估窗口\\
 \end{tabularx}\end{table}
 当前配置禁止倒车，并关闭自动原地旋转恢复，以降低拥挤通道中盲目恢复的风险。其代价是某些受阻情形需要重新规划或人工复位，而不能自行摆脱。视野之外、深度缺测或低于有效扫描面的物体仍可能漏检，导航栈不等于全空间避碰。
 
-\subsection{双层许可与速度门控}
+\subsubsection{双层许可与速度门控}
 跟随控制层检查目标、定位、TF、地图/代价地图、任务状态与目标最小间距，满足条件才发导航目标与运动许可。独立\code{velocity_gate.py}进一步要求许可、导航速度和扫描均新鲜，检查前方扇区有效量测并拒绝倒车、NaN/Inf及非法速度。可概括为
 \begin{equation}
 u_{\rm out}=\begin{cases}
@@ -62,12 +68,12 @@ G_{\rm loc}\land G_{\rm map}\land G_{\rm TF}\land G_{\rm scan}\land G_{\rm cmd},
 
 AMCL在机器人静止时不一定持续发布位姿，程序定期请求无运动定位更新，并配置重采样频率，使新扫描可更新定位结果。请求本身不制造有效扫描或虚假新鲜度，定位故障仍需在RViz重新初始化或排查传感器。
 
-\subsection{任务状态联动与当前集成缺口}
+\subsubsection{任务状态联动与当前集成缺口}
 跟随器需要持续收到允许阶段的\code{/competition/mission}。通用\code{competition.py}可通过UDP心跳桥提供状态；\code{open_loop.py}不发送该心跳，最新\code{marker_route.py}同样未实现该接口。因此“两个程序分别能启动”不等于“已经自动协同”：需增加适配器，将标记路线的搬运、放置、完成、暂停和故障映射到任务状态，明确频率、超时和停止行为后再联调。
 
 单车导航调试时可以在终端持续发布\code{carrying}，但这仅是测试输入，不能写成全队自动联动已完成。终点还需核对后车是否真正进入终点区域并停稳，不能只用TonyPi的放置完成判定所有车辆到达。
 
-\subsection{验证范围与待测指标}
+\subsubsection{验证范围与待测指标}
 已有部署记录表明功能包在ROS Kinetic/Python 2.7下完成构建、语法与launch解析检查；隔离ROS master中，在缺少目标、定位、任务与扫描时观测到零速度和禁止运动。该检查未向真实底盘发送导航速度，证明的是部分失效路径的逻辑，不能推导实际绕障成功率。
 
 本组已确认底盘和键盘遥控可用，地图质量、AMCL稳定性、动态避障、目标丢失后原地恢复及全程跟随仍需按第\ref{sec:experiments}节采集真实数据。尤其应在35\,cm障碍、转角目标遮挡和网络中断条件下逐项复核，而非直接进行多车混合测试。

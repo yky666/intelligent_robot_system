@@ -1,0 +1,15 @@
+\begin{tikzpicture}[box/.style={draw=Navy!65,line width=.8pt,rounded corners=3pt,fill=Navy!3,text width=35mm,minimum height=19mm,align=center,inner sep=3mm,font=\small,text=black},act/.style={box,draw=Teal,fill=Teal!6},warn/.style={box,draw=Rust,fill=Rust!6},edge/.style={-{Stealth[length=2.3mm]},line width=.9pt,draw=Navy},tag/.style={font=\footnotesize,text=Navy,fill=white,inner sep=1.3pt}]
+\node[box] (m) at (0,0) {\textbf{01\quad 任务与目标}\\[1mm]任务运行、目标有效};
+\node[box] (l) at (5.3,0) {\textbf{02\quad 定位与坐标}\\[1mm]定位、地图、TF 有效};
+\node[box] (p) at (10.6,0) {\textbf{03\quad 空间可行性}\\[1mm]间距、轨迹与足迹通过};
+\node[act] (n) at (10.6,-3) {\textbf{04\quad 导航许可}\\[1mm]发送目标、导航未失败};
+\node[warn] (g) at (5.3,-3) {\textbf{05\quad 速度安全复核}\\[1mm]时效、扇区距离与限速};
+\node[act] (o) at (0,-3) {\textbf{06\quad 底盘安全输出}\\[1mm]通过则放行，否则零速};
+\draw[edge] (m)--node[tag,above] {通过}(l);
+\draw[edge] (l)--node[tag,above] {通过}(p);
+\draw[edge] (p)--node[tag,right] {通过}(n);
+\draw[edge] (n)--node[tag,above,align=center] {速度命令\\+ 许可}(g);
+\draw[edge] (g)--node[tag,above] {复核结果}(o);
+\node[draw=Rust!55,fill=Rust!4,rounded corners=2pt,text width=145mm,align=left,inner sep=3mm,font=\small,text=black] (failure) at (5.3,-5.5) {\textbf{失败处置分为两层}\\[1mm]上游条件失效：取消导航目标并撤销运动许可。\\下游复核不通过：独立门控输出零速，不依赖上游及时响应。};
+\draw[edge,dashed,draw=Rust] (g.south)--(failure.north);
+\end{tikzpicture}

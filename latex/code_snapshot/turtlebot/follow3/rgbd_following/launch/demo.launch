@@ -1,0 +1,14 @@
+<launch>
+  <!-- No drivers, robot, Gazebo or velocity publisher required. -->
+  <group ns="rgbd_demo">
+    <node pkg="rgbd_following" type="synthetic_rgbd.py" name="source" output="screen">
+      <param name="mode" value="good" />
+    </node>
+  </group>
+  <include file="$(find rgbd_following)/launch/probe.launch">
+    <arg name="robot_ns" value="rgbd_demo" />
+    <arg name="rgb_topic" value="/rgbd_demo/rgb" />
+    <arg name="depth_topic" value="/rgbd_demo/depth" />
+    <arg name="info_topic" value="/rgbd_demo/camera_info" />
+  </include>
+</launch>

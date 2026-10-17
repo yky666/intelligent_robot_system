@@ -1,0 +1,15 @@
+{
+  "pages": 80,
+  "source_revision": "7bbf5886ac6f0096e67cdda29c55bc6f8a8e822a",
+  "compiler": "XeLaTeX",
+  "members_tables": true,
+  "fatal_errors": false,
+  "unresolved_references": false,
+  "missing_glyphs": false,
+  "overfull_boxes": 0,
+  "real_photos_embedded": true,
+  "video_frames_embedded": true,
+  "review_revision": "43a7771baa2b33afc203b54543001995838879fd",
+  "vehicle_identity_confirmed": false,
+  "additional_source_figures": 6
+}

@@ -1,15 +1,20 @@
 \section{系统架构与协同接口}
 \subsection{分层控制}
 人形机器人负责物体搬运与领行；TurtleBot负责各自的目标观测、定位和运动控制。不同机器人的执行器由各自进程独占，感知线程只提供观测，避免多个程序同时写舵机或底盘速度。图\ref{fig:architecture}描述方式二的完整数据链；任务心跳是可选适配接口，不代表所有人形入口已经发送心跳。
-\begin{figure}[htbp]\centering
+\begin{figure}[H]\centering
 \input{figures/system_architecture.tex}
 \caption{人形机器人与方式二跟随的数据链}\label{fig:architecture}
 \end{figure}
 
+图中两条实线链分别对应人形动作控制和移动底盘导航，二者通过任务语义协同。底部虚线表示尚需适配的任务许可接口：它必须把领航者的运行状态显式传给跟随门控，不能由相机“仍能看见目标”代替。因而感知有效、任务允许运动和底盘速度输出应分别核对。
+
+
 \subsection{软件平台与版本边界}
+本稿主体最初依据\code{7bbf588}分析，新增视频后对GitHub主分支\code{43a7771}进行了针对性核对。TonyPi路线入口、前车位姿转发、地图跟随器和轨迹核心逻辑保持一致；当前\code{follow_map.launch}将速度门控指向\code{ar_marker_following}功能包，而非旧快照中的\code{multi_robot_following}。下述架构功能不变，但复现命令应使用当前包归属。复核文件保存在\code{code_snapshot_current}，原始分析快照保留在\code{code_snapshot}，以免将不同版本证据混写\cite{repo-current}。
+
 TonyPi 使用 Python 3、OpenCV、NumPy、PyYAML及设备原装舵机SDK；不同树莓派镜像的串口、SDK和相机接口存在差异，应使用实际部署配置。TurtleBot课程虚拟机为 Ubuntu 16.04、ROS Kinetic、Python 2.7，功能包放置于 \code{~/catkin_ws/src}，不能直接用 Python 3 替换 ROS 节点解释器。
 
-\begin{table}[htbp]\centering\small
+\begin{table}[H]\centering\small
 \caption{关键接口及约束}
 \begin{tabularx}{\linewidth}{p{37mm}p{40mm}Y}\toprule
 接口 & 内容 & 使用约束\\\midrule
@@ -20,6 +25,9 @@ TonyPi 使用 Python 3、OpenCV、NumPy、PyYAML及设备原装舵机SDK；不�
 \code{/competition/mission} & 搬运任务状态 & 需持续更新；开环和最新标记入口不能默认视为已接入\\
 \code{/cmd_vel_mux/input/navi} & 方式二底盘导航速度 & 由独立门控输出；不与键盘遥控争用\\\bottomrule
 \end{tabularx}\end{table}
+
+这些接口共同要求时间、坐标和发布权限一致。消息能够接通只是第一步，还需核对观测采样时刻、TF 链以及最终速度发布者，才能判断系统是否按图示链路运行。
+
 
 \subsection{拓扑与跟随方式的区分}
 “TonyPi到首车再到后车”的队列拓扑，与“标记/地图/RGB-D/前车轨迹”的跟随算法是两个维度。当前方式二默认直接观察 TonyPi 背部 AR 标记，再在地图中导航；也支持输入前车地图位姿。实验时应固定一个目标来源并记录，不能把两个适配器同时发布到同一个目标话题。

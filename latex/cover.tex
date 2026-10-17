@@ -1,0 +1,48 @@
+% 学术风格封面：所有图形均为可编辑矢量，不依赖外部图片。
+\begin{titlepage}
+\thispagestyle{empty}
+\null
+\begin{tikzpicture}[remember picture,overlay]
+\begin{scope}[shift={(current page.south west)},x=1mm,y=1mm]
+% Top identity and restrained accent.
+\fill[Navy] (0,285) rectangle (210,297);
+\fill[Teal] (25,285) rectangle (62,287);
+\node[anchor=west,font=\sffamily\fontsize{9}{11}\selectfont,text=Muted] at (25,272) {INTELLIGENT ROBOTICS LAB};
+\node[anchor=west,font=\sffamily\bfseries\fontsize{17}{22}\selectfont,text=Navy] at (25,258) {\ReportClass};
+\node[anchor=east,font=\sffamily\fontsize{10}{13}\selectfont,text=Teal] at (185,258) {实验报告};
+\draw[Muted!30,line width=.4pt] (25,248)--(185,248);
+% Title hierarchy.
+\fill[Teal] (25,204) rectangle (26.2,234);
+\node[anchor=north west,inner sep=0,font=\bfseries\fontsize{21}{30}\selectfont,text=Navy] at (32,234) {基于视觉与地图导航的};
+\node[anchor=north west,inner sep=0,font=\bfseries\fontsize{32}{40}\selectfont,text=Navy] at (32,220) {多机协同控制};
+\node[anchor=west,font=\sffamily\fontsize{12}{16}\selectfont,text=Muted] at (32,200) {方案设计与技术实现};
+% Two-part technical focus.
+\fill[Navy!4,rounded corners=2mm] (25,169) rectangle (101,191);
+\fill[Teal!6,rounded corners=2mm] (109,169) rectangle (185,191);
+\node[anchor=west,font=\sffamily\bfseries\fontsize{14}{18}\selectfont,text=Navy] at (31,184) {TonyPi};
+\node[anchor=west,font=\fontsize{10}{14}\selectfont,text=Muted] at (31,174) {抱物穿行\quad 标记路线\quad 状态机};
+\node[anchor=west,font=\sffamily\bfseries\fontsize{14}{18}\selectfont,text=Teal] at (115,184) {TurtleBot2};
+\node[anchor=west,font=\fontsize{10}{14}\selectfont,text=Muted] at (115,174) {建图定位\quad 轨迹跟随\quad 避障};
+\draw[-{Stealth[length=2mm]},Teal,line width=.7pt] (102,180)--(108,180);
+% Cover contribution overview: fuller version confirmed by the group.
+\node[anchor=west,font=\sffamily\bfseries\fontsize{14}{18}\selectfont,text=Navy] at (25,158) {第五大组\enspace /\enspace 第一小组};
+\draw[Teal,line width=1pt] (25,151)--(185,151);
+\node[anchor=west,font=\sffamily\fontsize{9}{12}\selectfont,text=Muted] at (28,145) {小组成员};
+\node[anchor=west,font=\sffamily\fontsize{9}{12}\selectfont,text=Muted] at (56,145) {主要分工与协作};
+\fill[Navy!3,rounded corners=1mm] (25,116) rectangle (185,140);
+\node[anchor=west,font=\bfseries\fontsize{12}{17}\selectfont,text=Navy] at (28,128) {杨开元};
+\node[anchor=north west,inner sep=0,text width=125mm,align=left,font=\fontsize{10}{14}\selectfont,text=Navy] at (56,138) {主要负责 TonyPi 动作标定与路线状态机编写，围绕抱物行走及转弯需求开展动作参数调整；承担二维码转弯控制算法的初步实现，将目标识别、路线阶段判断与动作执行衔接起来；结合现场调试完善状态转换条件及动作调用逻辑，推进感知与执行模块的联动。};
+\node[anchor=west,font=\bfseries\fontsize{12}{17}\selectfont,text=Navy] at (28,102) {林楗棋};
+\node[anchor=north west,inner sep=0,text width=125mm,align=left,font=\fontsize{10}{14}\selectfont,text=Navy] at (56,112) {主要负责动作组改进与二维码转弯算法的实现优化，围绕机器人行走和转向过程调整动作组及其衔接方式；参与将二维码观测结果用于转弯动作选择，协同完善路线控制逻辑；结合实际运行表现迭代动作配置与算法细节，促进动作执行与视觉决策之间的协调。};
+\fill[Navy!3,rounded corners=1mm] (25,64) rectangle (185,88);
+\node[anchor=west,font=\bfseries\fontsize{12}{17}\selectfont,text=Navy] at (28,76) {曹淇涵};
+\node[anchor=north west,inner sep=0,text width=125mm,align=left,font=\fontsize{10}{14}\selectfont,text=Navy] at (56,86) {主要负责实验赛道搭建与动作辅助标定，参与围挡通道、转角区域及机器人运行空间的布置与调整；配合开展动作试验，协助核对机器人姿态、行走方向及转弯表现；将现场空间约束与运行现象反馈至标定和调试过程，为算法验证提供实验条件与操作支持。};
+\node[anchor=west,font=\bfseries\fontsize{12}{17}\selectfont,text=Navy] at (28,50) {刘小凡};
+\node[anchor=north west,inner sep=0,text width=125mm,align=left,font=\fontsize{10}{14}\selectfont,text=Navy] at (56,60) {主要负责二维码转弯方案的协同构思与实验报告撰写，参与识别信息与转弯决策相结合的技术路线讨论；共同开展动作标定、赛道搭建及现场方案调整；承担报告结构组织、源码机制梳理、技术图表制作与视频证据整理，将分散的实现过程归纳为完整的技术论述。};
+% Quiet footer.
+\draw[Muted!30,line width=.4pt] (25,30)--(185,30);
+\node[anchor=west,font=\sffamily\fontsize{9}{12}\selectfont,text=Muted] at (25,22) {\ReportDate};
+\node[anchor=east,font=\sffamily\fontsize{9}{12}\selectfont,text=Muted] at (185,22) {视觉感知\quad 动作控制\quad 多机协同};
+\end{scope}
+\end{tikzpicture}
+\end{titlepage}

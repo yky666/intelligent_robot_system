@@ -1,0 +1,18 @@
+<launch>
+  <arg name="robot_ns" default="tb2" />
+  <arg name="marker_size_cm" default="9.0" />
+  <arg name="image_topic" default="/$(arg robot_ns)/camera/rgb/image_raw" />
+  <arg name="info_topic" default="/$(arg robot_ns)/camera/rgb/camera_info" />
+  <arg name="optical_frame" default="$(arg robot_ns)/camera_rgb_optical_frame" />
+  <group ns="$(eval arg('robot_ns') or '/')">
+    <node pkg="ar_track_alvar" type="individualMarkersNoKinect" name="ar_tracker" output="screen">
+      <param name="marker_size" value="$(arg marker_size_cm)" type="double" />
+      <param name="max_new_marker_error" value="0.08" type="double" />
+      <param name="max_track_error" value="0.2" type="double" />
+      <param name="output_frame" value="$(arg optical_frame)" />
+      <remap from="camera_image" to="$(arg image_topic)" />
+      <remap from="camera_info" to="$(arg info_topic)" />
+      <remap from="ar_pose_marker" to="ar_pose_marker" />
+    </node>
+  </group>
+</launch>

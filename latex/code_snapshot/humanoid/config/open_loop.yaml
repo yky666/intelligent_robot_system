@@ -1,0 +1,18 @@
+# Exact action files requested by the team. No camera/feedback/arm overrides.
+hardware_backend: legacy
+actions:
+  stand: /home/pi/TonyPi/ActionGroups/stand.d6a
+  grab: /home/pi/tonypi_web_control/actions/grab.d6a
+  forward: /home/pi/tonypi_web_control/action/grab_go_forward.d6a
+  left: /home/pi/tonypi_web_control/action/grab_turn_left.d6a
+  right: /home/pi/tonypi_web_control/action/grab_turn_right.d6a
+  release: /home/pi/tonypi_web_control/actions/release.d6a
+steps:
+  - {kind: stand, cycles: 1}
+  - {kind: grab, cycles: 1}
+  - {kind: forward, cycles: 10}
+  - {kind: left, cycles: 10}
+  - {kind: forward, cycles: 10}
+  - {kind: right, cycles: 10}
+  - {kind: forward, cycles: 10}
+  - {kind: release, cycles: 1}

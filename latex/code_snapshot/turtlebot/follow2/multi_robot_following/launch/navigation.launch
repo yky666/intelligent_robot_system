@@ -1,0 +1,53 @@
+<launch>
+  <!-- Robot drivers must already provide ns/odom -> ns/base_footprint -> sensor TF. -->
+  <arg name="robot_ns" default="tb2" />
+  <arg name="map_file" />
+  <arg name="map_frame" default="map" />
+  <arg name="base_frame" default="$(arg robot_ns)/base_footprint" />
+  <arg name="odom_frame" default="$(arg robot_ns)/odom" />
+  <arg name="scan_topic" default="/$(arg robot_ns)/scan" />
+  <group ns="$(eval arg('robot_ns') or '/')">
+    <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)" output="screen">
+      <param name="frame_id" value="$(arg map_frame)" />
+    </node>
+    <node pkg="amcl" type="amcl" name="amcl" output="screen">
+      <param name="global_frame_id" value="$(arg map_frame)" />
+      <param name="odom_frame_id" value="$(arg odom_frame)" />
+      <param name="base_frame_id" value="$(arg base_frame)" />
+      <param name="use_map_topic" value="true" />
+      <param name="odom_model_type" value="diff" />
+      <param name="laser_model_type" value="likelihood_field" />
+      <param name="min_particles" value="500" />
+      <param name="max_particles" value="2000" />
+      <param name="resample_interval" value="1" />
+      <param name="update_min_d" value="0.05" />
+      <param name="update_min_a" value="0.05" />
+      <param name="transform_tolerance" value="0.3" />
+      <remap from="scan" to="$(arg scan_topic)" />
+    </node>
+    <node pkg="multi_robot_following" type="localization_refresh.py" name="localization_refresh" output="screen" />
+    <node pkg="move_base" type="move_base" name="move_base" output="screen">
+      <rosparam command="load" file="$(find multi_robot_following)/config/move_base.yaml" />
+      <rosparam command="load" file="$(find multi_robot_following)/config/costmap_common.yaml" ns="global_costmap" />
+      <rosparam command="load" file="$(find multi_robot_following)/config/costmap_common.yaml" ns="local_costmap" />
+      <param name="global_costmap/global_frame" value="$(arg map_frame)" />
+      <param name="global_costmap/robot_base_frame" value="$(arg base_frame)" />
+      <param name="global_costmap/static_map" value="true" />
+      <param name="global_costmap/update_frequency" value="3.0" />
+      <param name="global_costmap/publish_frequency" value="2.0" />
+      <param name="global_costmap/laser/topic" value="$(arg scan_topic)" />
+      <param name="local_costmap/global_frame" value="$(arg odom_frame)" />
+      <param name="local_costmap/robot_base_frame" value="$(arg base_frame)" />
+      <param name="local_costmap/rolling_window" value="true" />
+      <param name="local_costmap/static_map" value="false" />
+      <param name="local_costmap/width" value="4.0" />
+      <param name="local_costmap/height" value="4.0" />
+      <param name="local_costmap/resolution" value="0.05" />
+      <param name="local_costmap/update_frequency" value="5.0" />
+      <param name="local_costmap/publish_frequency" value="2.0" />
+      <param name="local_costmap/laser/topic" value="$(arg scan_topic)" />
+      <remap from="odom" to="odom" />
+      <remap from="cmd_vel" to="cmd_vel_raw" />
+    </node>
+  </group>
+</launch>

@@ -1,60 +1,39 @@
-# 多机协同实验报告（LaTeX 协作目录）
+# 智能机器人实验报告（LaTeX 协作目录）
 
-使用 **XeLaTeX**，入口是 `main.tex`。第一组负责 **TonyPi 人形机器人 + 方式二建图避障跟随**；姓名、学号、实际贡献先占位。第二/三/四组与方式一/三/四的对应关系暂供协作，需各组确认。
+入口为 **main.tex**，编译器使用 **XeLaTeX**。本次更新为第五大组第一小组审阅后的报告；第一小组负责 **TonyPi 人形机器人与方式二建图避障跟随**。封面记录杨开元、林楗棋、曹淇涵、刘小凡的主要分工，分工正文采用常规字重，第2章保留详细协作说明。
 
-本初稿按代码基线 `6b6db8c` 核对，已包含最新 `humanoid/maze_route`，不把旧道路居中入口当作唯一最终实现。完整实机结果尚未收齐，文中明确区分实现、合成测试、局部实机和全队验收。
+## 查看与编译
 
-## 各组改哪些文件
+- [已编译报告](report-draft.pdf)：80页，含实景照片、比赛视频截图、状态机和源码分析图。
+- [主文件](main.tex)、[封面](cover.tex)、[公共样式](preamble.tex)、[封面信息](metadata.tex)。
+- 将完整 latex 目录上传到 Overleaf，主文件选 main.tex，编译器选 XeLaTeX。fonts/ 随附中文字体，figures/ 提供图形。
+- 本地运行 build.cmd，或执行 `latexmk -xelatex -interaction=nonstopmode -halt-on-error main.tex`。至少编译两次更新目录及交叉引用。
+- 不提交 build/、编译辅助文件、缓存、完整视频及 bag。
 
-| 责任 | 正文文件 | 图片目录 |
+## 各组编辑位置
+
+| 内容 | 源文件 | 图形目录 |
 |---|---|---|
-| 第一组：人形机器人 | `sections/10_humanoid.tex` | `figures/humanoid/` |
-| 第一组：方式二 | `sections/30_follow2.tex` | `figures/follow2/` |
-| 第二组（暂定）：方式一 | `sections/20_follow1.tex` | `figures/follow1/` |
-| 第三组（暂定）：方式三 | `sections/40_follow3.tex` | `figures/follow3/` |
-| 第四组（暂定）：方式四 | `sections/50_follow4.tex` | `figures/follow4/` |
-| 共同分工 | `sections/02_division.tex` | 无 |
-| 总体方案/实验/总结 | `sections/01_overview.tex`、`03_architecture.tex`、`60_experiments.tex`、`70_conclusion.tex` | `figures/site/` |
-| 封面与代码基线 | `metadata.tex` | 无 |
-| 原始结果索引 | `data/experiment_records.csv` | 证据路径写入 CSV |
+| 第一小组：TonyPi | sections/10_humanoid.tex、11_humanoid_analysis.tex、12_humanoid_contracts.tex | figures/humanoid/；状态机见 figures/*.tex |
+| 第一小组：方式二 | sections/30_follow2.tex、31_follow2_analysis.tex、32_follow2_contracts.tex | figures/follow2/、figures/analysis/、figures/enriched/ |
+| 方式一 | sections/20_follow1.tex | figures/follow1/；原有独立稿 follow1/ar_marker_report.tex 保留 |
+| 方式三 | sections/40_follow3.tex | figures/follow3/ |
+| 方式四 | sections/50_follow4.tex | figures/follow4/ |
+| 组内协作 | sections/02_division.tex；封面摘要在 cover.tex | 无 |
+| 实验与视频证据 | sections/60_experiments.tex、61_video_evidence.tex | figures/site/、figures/video/ |
+| 引用与实现依据 | sections/80_references.tex、90_reproduction.tex、91_code_analysis.tex、92_parameter_snapshot.tex | data/、code_snapshot/、code_snapshot_current/ |
 
-各组章节内已留成员分工表。第一组成员表统一放在 `02_division.tex`。按真实贡献填写任务和提交/实验记录，不默认给任何人分配已完成工作。
+各组独立维护对应章节和图形；公共入口、样式和跨模块接口协商调整。不要用某位贡献者在仓库 README 中的“我们组”推断全队组号，也不要将视频画面顺序自动等同于方式编号。
 
-## 编译
+## 图形与证据
 
-安装完整 TeX Live 或 MiKTeX（需 ctex、Fandol、TikZ、latexmk），从本目录执行：
-
-```powershell
-latexmk -xelatex -interaction=nonstopmode -halt-on-error -outdir=build main.tex
-```
-
-或 Windows 双击 `build.cmd`。产物为 `build/main.pdf`。也可在 Overleaf 上传整个 `latex/` 目录，主文件选 `main.tex`，编译器选 XeLaTeX；不要只上传章节文件。中文字体使用 TeX 随附 Fandol，避免依赖个人 Windows 字体。
-
-`build/` 及辅助文件不提交 Git。仓库保留一份已编译初稿 `report-draft.pdf` 便于直接查看；正文修改后运行 `build.cmd` 或 `latexmk`，检查版式后从 `build/main.pdf` 更新它。封面明确标为协作初稿，不是最终验收报告。
-
-## 增补图片
-
-当前会话所示照片尚无本地文件路径，**没有假定截图已保存或伪造现场图片**。请把原图按 `figures/README.md` 的文件名放入对应目录。已有图位使用 `\reportphoto`，缺图时能正常编译并显示明确占位框；补齐后自动显示图片并移除图题的待归档说明。终稿需补齐图片或删除图位。
-
-所有新图表必须有 `\caption` 和唯一 `\label`；建议前缀 `hum-`、`f1-`、`f2-`、`f3-`、`f4-`，正文使用 `\ref`。TikZ 示意图均标明不是实测图，不把它们当作现场结果。
+- 状态机、节点和守卫图为可编辑 TikZ，科研曲线以矢量 PDF 为主。
+- 比赛视频只提交引用帧；时间戳和原片摘要见 data/video_evidence.json，裁剪框见 data/enriched_figures.json，完整原始帧同时保留。
+- 车辆与方式身份未知，正文按“近端跟随车／后续车辆”描述。
+- 动作时长来自真实 d6a；投票、时效、采样与终点边界图为源码或明确输入的解析说明，不作为实测性能。
+- code_snapshot/ 保留原分析依据；code_snapshot_current/ 保留43a7771复核文件，差异见 data/github_alignment.json。最新门控功能包归属在正文说明。
+- 未采集到的结果保持为未测；视频不单独证明完整终点放置或末车停稳。
 
 ## 协作与同步
 
-```bash
-git pull --ff-only
-git switch -c report/group1
-# 修改各自章节、图片与真实记录
-git add latex
-git commit -m "Update group 1 report and experiment evidence"
-git push -u origin report/group1
-```
-
-通过 PR 合并。旧 Git 用 `git checkout -b report/group1`。各组尽量不同时修改 `main.tex`、`preamble.tex` 或其他组章节，公共分工信息由对接人统一合并。图片用英文文件名，不提交密码、私钥、视频、bag或编译缓存。
-
-## 定稿前的缺项
-
-- 确认第二/三/四组对应关系、各组成员与学号，核实分工和贡献。
-- 补齐现场原图、参数与完整实测记录；没有数据时保留“待测”，不能写 0 次失败或 100% 成功。
-- 最新标记路线的任务心跳、抓取确认/掉落恢复、严格丢目标处置尚有集成缺口，报告没有宣称已全部实现。
-- 方式一实际为移动背贴 AR 直接跟随，与手册固定场地标签参考有区别；各组共同确认方式独立性。
-- 原始运行数据模板是空表，不是实验结果；视频/bag放团队共享存储，表内保留证据位置。
+从最新 main 创建各组报告分支，只修改对应章节与图形，通过 Pull Request 合并。其他小组原有独立文件和图片目录保留。新增图表需有前后解释，实验结果关联代码版本、配置和原始证据。

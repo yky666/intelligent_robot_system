@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.8.3)
+project(multi_robot_following)
+find_package(catkin REQUIRED COMPONENTS rospy geometry_msgs std_msgs sensor_msgs nav_msgs tf2_ros tf2_geometry_msgs actionlib move_base_msgs ar_track_alvar_msgs std_srvs)
+catkin_python_setup()
+catkin_package()
+catkin_install_python(PROGRAMS scripts/marker_target.py scripts/map_follower.py scripts/velocity_gate.py scripts/mission_bridge.py scripts/pose_relay.py scripts/marker_follower.py scripts/localization_refresh.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+install(DIRECTORY launch config DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

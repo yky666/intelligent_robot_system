@@ -1,0 +1,231 @@
+\section{实际配置快照与参数复现}
+\subsection{导航与DWA配置}
+这些参数进入ROS导航栈，控制频率、采样和动力学范围共同决定短时可行轨迹。最大速度是指令上限，不是实测匀速；加速度限制是规划假设，不等于满载实际制动下界。Kinetic版本的字段名应与部署发行版匹配。
+
+recovery\_behavior\_enabled与clearing\_rotation\_allowed关闭，使导航失败不会后台原地旋转。代价是部分卡滞需要排故重启。改参数后应保留旧配置和同场对照，记录控制时延、规划失败与障碍余量。
+\source{\code{turtlebot/follow2/multi_robot_following/config/move_base.yaml}；基线7bbf588。以下为配置摘录，不标为现场最终参数。}
+\begin{CodeBlock}
+  1 | base_local_planner: dwa_local_planner/DWAPlannerROS
+  2 | controller_frequency: 10.0
+  3 | planner_frequency: 1.0
+  4 | planner_patience: 3.0
+  5 | controller_patience: 3.0
+  6 | oscillation_timeout: 8.0
+  7 | oscillation_distance: 0.1
+  8 | recovery_behavior_enabled: false
+  9 | clearing_rotation_allowed: false
+ 10 | shutdown_costmaps: false
+ 11 | DWAPlannerROS:
+ 12 |   max_vel_x: 0.15
+ 13 |   min_vel_x: 0.0
+ 14 |   max_vel_y: 0.0
+ 15 |   min_vel_y: 0.0
+ 16 |   max_vel_trans: 0.15
+ 17 |   min_vel_trans: 0.03
+ 18 |   max_vel_theta: 0.5
+ 19 |   min_vel_theta: 0.1
+ 20 |   acc_lim_x: 0.3
+ 21 |   acc_lim_y: 0.0
+ 22 |   acc_lim_theta: 0.6
+ 23 |   xy_goal_tolerance: 0.15
+ 24 |   yaw_goal_tolerance: 0.4
+ 25 |   latch_xy_goal_tolerance: true
+ 26 |   sim_time: 1.5
+ 27 |   vx_samples: 10
+ 28 |   vy_samples: 1
+ 29 |   vth_samples: 20
+ 30 |   path_distance_bias: 32.0
+ 31 |   goal_distance_bias: 24.0
+ 32 |   occdist_scale: 0.05
+ 33 |   stop_time_buffer: 0.3
+ 34 |   publish_traj_pc: true
+ 35 |   publish_cost_grid_pc: true
+ 36 | 
+\end{CodeBlock}
+\subsection{固定地图与扫描代价层}
+静态地图负责场地围挡，实时扫描负责补充动态占据。robot\_radius与inflation\_radius对应不同几何作用；不能只为让窄道规划成功而随意缩小足迹，必须测量相机架、底盘与线缆外包络。
+
+扫描来源可能是Kinect深度转扫描，而不是独立激光雷达。此配置不证明低障碍已被传感器覆盖，必须逐层检查深度和scan。raytrace清除和障碍保持也要在障碍移入、移出场景验证。
+\source{\code{turtlebot/follow2/multi_robot_following/config/costmap_common.yaml}；基线7bbf588。以下为配置摘录，不标为现场最终参数。}
+\begin{CodeBlock}
+  1 | robot_radius: 0.23
+  2 | footprint_padding: 0.03
+  3 | transform_tolerance: 0.5
+  4 | obstacle_range: 3.0
+  5 | raytrace_range: 3.5
+  6 | observation_sources: laser
+  7 | laser:
+  8 |   data_type: LaserScan
+  9 |   topic: scan
+ 10 |   marking: true
+ 11 |   clearing: true
+ 12 |   obstacle_range: 3.0
+ 13 |   raytrace_range: 3.5
+ 14 |   observation_persistence: 0.0
+ 15 |   expected_update_rate: 0.5
+ 16 |   min_obstacle_height: 0.0
+ 17 |   max_obstacle_height: 2.0
+ 18 | inflation_radius: 0.60
+ 19 | cost_scaling_factor: 3.0
+ 20 | always_send_full_costmap: true
+ 21 | 
+\end{CodeBlock}
+\subsection{地图导航启动与坐标约定}
+launch声明robot\_ns、map\_file、base\_frame、odom\_frame与scan等接口，实际运行前核对课程驱动是否仍发布全局话题。公共map不代表所有frame都应相同，各车局部框架需独立。
+
+以下保留启动文件的主要结构。若原文件超过摘录行数，完整文件随code\_snapshot提供。报告中主机IP和设备路径应在本机参数中配置，不将登录凭据放入文稿。
+\source{\code{turtlebot/follow2/multi_robot_following/launch/navigation.launch}；基线7bbf588。以下为配置摘录，不标为现场最终参数。}
+\begin{CodeBlock}
+  1 | <launch>
+  2 |   <!-- Robot drivers must already provide ns/odom -> ns/base_footprint ...
+  3 |   <arg name="robot_ns" default="tb2" />
+  4 |   <arg name="map_file" />
+  5 |   <arg name="map_frame" default="map" />
+  6 |   <arg name="base_frame" default="$(arg robot_ns)/base_footprint" />
+  7 |   <arg name="odom_frame" default="$(arg robot_ns)/odom" />
+  8 |   <arg name="scan_topic" default="/$(arg robot_ns)/scan" />
+  9 |   <group ns="$(eval arg('robot_ns') or '/')">
+ 10 |     <node pkg="map_server" type="map_server" name="map_server" args="$ ...
+ 11 |       <param name="frame_id" value="$(arg map_frame)" />
+ 12 |     </node>
+ 13 |     <node pkg="amcl" type="amcl" name="amcl" output="screen">
+ 14 |       <param name="global_frame_id" value="$(arg map_frame)" />
+ 15 |       <param name="odom_frame_id" value="$(arg odom_frame)" />
+ 16 |       <param name="base_frame_id" value="$(arg base_frame)" />
+ 17 |       <param name="use_map_topic" value="true" />
+ 18 |       <param name="odom_model_type" value="diff" />
+ 19 |       <param name="laser_model_type" value="likelihood_field" />
+ 20 |       <param name="min_particles" value="500" />
+ 21 |       <param name="max_particles" value="2000" />
+ 22 |       <param name="resample_interval" value="1" />
+ 23 |       <param name="update_min_d" value="0.05" />
+ 24 |       <param name="update_min_a" value="0.05" />
+ 25 |       <param name="transform_tolerance" value="0.3" />
+ 26 |       <remap from="scan" to="$(arg scan_topic)" />
+ 27 |     </node>
+ 28 |     <node pkg="multi_robot_following" type="localization_refresh.py" n ...
+ 29 |     <node pkg="move_base" type="move_base" name="move_base" output="sc ...
+ 30 |       <rosparam command="load" file="$(find multi_robot_following)/con ...
+ 31 |       <rosparam command="load" file="$(find multi_robot_following)/con ...
+ 32 |       <rosparam command="load" file="$(find multi_robot_following)/con ...
+ 33 |       <param name="global_costmap/global_frame" value="$(arg map_frame)" />
+ 34 |       <param name="global_costmap/robot_base_frame" value="$(arg base_ ...
+ 35 |       <param name="global_costmap/static_map" value="true" />
+ 36 |       <param name="global_costmap/update_frequency" value="3.0" />
+ 37 |       <param name="global_costmap/publish_frequency" value="2.0" />
+ 38 |       <param name="global_costmap/laser/topic" value="$(arg scan_topic)" />
+ 39 |       <param name="local_costmap/global_frame" value="$(arg odom_frame)" />
+ 40 |       <param name="local_costmap/robot_base_frame" value="$(arg base_f ...
+ 41 |       <param name="local_costmap/rolling_window" value="true" />
+ 42 |       <param name="local_costmap/static_map" value="false" />
+ 43 |       <param name="local_costmap/width" value="4.0" />
+ 44 |       <param name="local_costmap/height" value="4.0" />
+ 45 |       <param name="local_costmap/resolution" value="0.05" />
+\end{CodeBlock}
+\subsection{跟随器目标源与速度重映射}
+该入口连接目标适配、地图跟随器与速度门控，目标源只能选marker或pose之一。motion\_allowed和raw/safe速度重映射需检查实际连接，确保导航器不能绕过最终门控直达底盘。
+
+follow\_distance、minimum\_distance和footprint\_radius自洽仅是必要条件。ALVAR目标尺寸与marker\_id要与实物匹配；调用pose模式则要共享地图原点和前车有效定位。
+\source{\code{turtlebot/follow2/multi_robot_following/launch/follow_map.launch}；以下保留基线7bbf588配置摘录，不标为现场最终参数。当前43a7771版本将门控节点的功能包由\code{multi_robot_following}改为\code{ar_marker_following}，见第3节版本边界和\code{code_snapshot_current}。}
+\begin{CodeBlock}
+  1 | <launch>
+  2 |   <arg name="robot_ns" default="tb2" />
+  3 |   <arg name="map_frame" default="map" />
+  4 |   <arg name="base_frame" default="$(arg robot_ns)/base_footprint" />
+  5 |   <!-- marker follows TonyPi; pose follows a predecessor already local ...
+  6 |   <arg name="target_source" default="marker" />
+  7 |   <arg name="marker_id" default="1" />
+  8 |   <arg name="leader_pose_topic" default="/tb1/amcl_pose" />
+  9 |   <arg name="marker_topic" default="/$(arg robot_ns)/ar_pose_marker" />
+ 10 |   <arg name="follow_distance" default="0.9" />
+ 11 |   <arg name="scan_topic" default="/$(arg robot_ns)/scan" />
+ 12 |   <arg name="cmd_vel_topic" default="/$(arg robot_ns)/cmd_vel_mux/inpu ...
+ 13 |   <group ns="$(eval arg('robot_ns') or '/')">
+ 14 |     <node if="$(eval arg('target_source') == 'marker')" pkg="multi_rob ...
+ 15 |       <param name="marker_id" value="$(arg marker_id)" />
+ 16 |       <param name="map_frame" value="$(arg map_frame)" />
+ 17 |       <remap from="ar_pose_marker" to="$(arg marker_topic)" />
+ 18 |     </node>
+ 19 |     <node if="$(eval arg('target_source') == 'pose')" pkg="multi_robot ...
+ 20 |       <param name="map_frame" value="$(arg map_frame)" />
+ 21 |       <remap from="leader_pose" to="$(arg leader_pose_topic)" />
+ 22 |     </node>
+ 23 |     <node pkg="multi_robot_following" type="map_follower.py" name="map ...
+ 24 |       <param name="map_frame" value="$(arg map_frame)" />
+ 25 |       <param name="base_frame" value="$(arg base_frame)" />
+ 26 |       <param name="follow_distance" value="$(arg follow_distance)" />
+ 27 |     </node>
+ 28 |     <node pkg="multi_robot_following" type="velocity_gate.py" name="ve ...
+ 29 |       <remap from="scan" to="$(arg scan_topic)" />
+ 30 |       <remap from="cmd_vel_safe" to="$(arg cmd_vel_topic)" />
+ 31 |     </node>
+ 32 |   </group>
+ 33 | </launch>
+ 34 | 
+\end{CodeBlock}
+\subsection{AR检测入口与相机参数}
+ALVAR检测依赖图像、CameraInfo、optical\_frame与厘米制标签尺寸。图像分辨率改变时内参需同步，不能把普通QR图案替代ALVAR标签而只改marker\_id。
+
+尺寸误差会直接变为位姿尺度误差。相机采样时刻的TF需有效，检测框截图不证明整段目标持续可见。正式现场记录应包含打印尺寸、安装高度和标签朝向。
+\source{\code{turtlebot/follow2/multi_robot_following/launch/ar_tracker.launch}；基线7bbf588。以下为配置摘录，不标为现场最终参数。}
+\begin{CodeBlock}
+  1 | <launch>
+  2 |   <arg name="robot_ns" default="tb2" />
+  3 |   <arg name="marker_size_cm" default="9.0" />
+  4 |   <arg name="image_topic" default="/$(arg robot_ns)/camera/rgb/image_r ...
+  5 |   <arg name="info_topic" default="/$(arg robot_ns)/camera/rgb/camera_i ...
+  6 |   <arg name="optical_frame" default="$(arg robot_ns)/camera_rgb_optica ...
+  7 |   <group ns="$(eval arg('robot_ns') or '/')">
+  8 |     <node pkg="ar_track_alvar" type="individualMarkersNoKinect" name=" ...
+  9 |       <param name="marker_size" value="$(arg marker_size_cm)" type="do ...
+ 10 |       <param name="max_new_marker_error" value="0.08" type="double" />
+ 11 |       <param name="max_track_error" value="0.2" type="double" />
+ 12 |       <param name="output_frame" value="$(arg optical_frame)" />
+ 13 |       <remap from="camera_image" to="$(arg image_topic)" />
+ 14 |       <remap from="camera_info" to="$(arg info_topic)" />
+ 15 |       <remap from="ar_pose_marker" to="ar_pose_marker" />
+ 16 |     </node>
+ 17 |   </group>
+ 18 | </launch>
+ 19 | 
+\end{CodeBlock}
+\subsection{任务桥的独立运行入口}
+每个ROS master只运行一个任务桥，配置sender\_ip、session和端口。收到合法心跳才允许跟随任务进入对应状态，旧会话序号和错误来源不刷新有效性。
+
+这份入口提供接口，不自动使最新人形程序具备发送端。适配器须单独实现并验收，测试终端持续发布carrying只用于隔离导航测试，不能充当自动协同结果。
+\source{\code{turtlebot/follow2/multi_robot_following/launch/mission_bridge.launch}；基线7bbf588。以下为配置摘录，不标为现场最终参数。}
+\begin{CodeBlock}
+  1 | <launch>
+  2 |   <arg name="sender_ip" />
+  3 |   <arg name="session" default="team1" />
+  4 |   <arg name="port" default="15000" />
+  5 |   <node pkg="multi_robot_following" type="mission_bridge.py" name="mis ...
+  6 |     <param name="sender_ip" value="$(arg sender_ip)" />
+  7 |     <param name="session" value="$(arg session)" />
+  8 |     <param name="port" value="$(arg port)" />
+  9 |   </node>
+ 10 | </launch>
+ 11 | 
+\end{CodeBlock}
+\subsection{当前抱物动作的数据库统计}
+以下统计由SQLite只读查询生成，帧时长累加不含稳态等待、相机观测与保护暂停。动作文件帧数和锁臂刻度属于客观文件证据，不代表实际关节跟踪误差或物体稳定性。当前动作映射与旧grab版本不同，比较时必须固定文件版本。
+\begin{table}[H]\centering\small\begin{tabularx}{\linewidth}{Yrr}\toprule 动作 & 帧数 & 名义时长(s)\\\midrule
+\code{grab_final_v2} & 7 & 9.5\\
+\code{catch_ball_go} & 10 & 0.95\\
+\code{catch_ball_turn_left} & 6 & 1\\
+\code{catch_ball_turn_right} & 6 & 1\\
+\bottomrule\end{tabularx}\caption{最新maze\_route/actions动作文件统计。}\end{table}
+六个手臂通道在抓取尾帧的值按ID 6、7、8、14、15、16排列。代码副本生成只替换指定通道，腿部与时序应保留；首帧桥接又会改变真实执行总时长。文件统计和运行日志应相互核对，不能从名义播放时间估算完整路线耗时。
+\source{\code{data/source_analysis.json}；\code{maze_route/actions/*.d6a}。}
+
+\subsection{证据类型与复现结果的对应}
+图文材料必须先区分来源，再解释结论。真实动作矩阵来自d6a数据库，可复核帧数、时长和命令；模板图来自常量，可复核图案和编码距离；轨迹例子调用无ROS核心函数，可复核给定点列的插值；控制门限和通道余量属于解析关系。上述材料均不提供完整实机成功率。
+\begin{longtable}{p{28mm}p{46mm}p{58mm}}\caption{本稿技术图表的来源与结论范围。}\\\toprule 资料类型 & 可复现输入 & 结论范围\\\midrule\endfirsthead\toprule 资料类型 & 可复现输入 & 结论范围\\\midrule\endhead
+状态转换图 & marker\_route控制流 & 阶段、守卫、失败出口与模式差异\\
+标记模板/位差 & markers.py常量 & 字典结构和旋转分离，不是实机混淆矩阵\\
+动作命令热图 & 当前SQLite动作文件 & 命令刻度和帧结构，不是关节实测轨迹\\
+Trail返回点 & 给定折线和真实核心函数 & 弧长目标行为，不是底盘执行路径\\
+门限/通道曲线 & 源码表达式与给定假设 & 参数设计含义，不是最优调参结论\\
+现场照片/日志 & 本组原图、真实运行文件 & 对应试验的物理过程，必须独立归档\\\bottomrule\end{longtable}
+本包保留图源程序、公开源码快照与参数记录，便于检查图中数值和状态是否与实现一致。任何后续修改若改变目标来源、路线入口、动作或标记尺寸，应同步更新图题、基线和日志。不同版本数据不能只因文件名相同而合并。对于还没有归档的实机证据，保留明确的待验证说明，而不是用合成曲线替代结果。
+

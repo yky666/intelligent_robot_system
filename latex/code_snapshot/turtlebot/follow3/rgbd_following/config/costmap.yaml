@@ -1,0 +1,50 @@
+robot_radius: 0.26
+footprint_padding: 0.05
+transform_tolerance: 0.3
+track_unknown_space: true
+always_send_full_costmap: true
+plugins:
+  - {name: obstacles, type: 'costmap_2d::VoxelLayer'}
+  - {name: inflation, type: 'costmap_2d::InflationLayer'}
+obstacles:
+  # Retain occupied height bins: a ground ray must not erase a higher obstacle.
+  # These bounds MUST include the camera origin and all body-height obstacles.
+  # Kinetic's VoxelPluginConfig clamps origin_z to >= 0.
+  origin_z: 0.0
+  z_resolution: 0.1
+  z_voxels: 16
+  max_obstacle_height: 1.5
+  mark_threshold: 0
+  unknown_threshold: 15
+  publish_voxel_map: true
+  track_unknown_space: true
+  observation_sources: depth clearing
+  # Marking and clearing have different endpoint bounds. A valid distant/high
+  # return can clear intervening voxels without itself marking a near obstacle.
+  depth:
+    topic: obstacle_cloud
+    data_type: PointCloud2
+    marking: true
+    clearing: false
+    min_obstacle_height: 0.04
+    max_obstacle_height: 1.5
+    obstacle_range: 3.5
+    raytrace_range: 4.0
+    observation_persistence: 0.0
+    expected_update_rate: 0.4
+  clearing:
+    topic: clearing_cloud
+    data_type: PointCloud2
+    marking: false
+    clearing: true
+    # Preserve finite endpoints beyond the body-height volume. VoxelLayer clips
+    # the 3D ray to its bounds; do not discard these in ObservationBuffer first.
+    min_obstacle_height: -10.0
+    max_obstacle_height: 10.0
+    obstacle_range: 3.5
+    raytrace_range: 4.0
+    observation_persistence: 0.0
+    expected_update_rate: 0.4
+inflation:
+  inflation_radius: 0.55
+  cost_scaling_factor: 4.0

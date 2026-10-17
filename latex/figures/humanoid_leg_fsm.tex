@@ -1,0 +1,29 @@
+\begin{tikzpicture}[
+box/.style={draw=Navy!65,line width=.8pt,rounded corners=3pt,fill=Navy!3,text width=32mm,minimum height=15mm,align=center,inner sep=2.5mm,font=\small,text=black},
+act/.style={box,draw=Teal,fill=Teal!6},
+warn/.style={box,draw=Rust,fill=Rust!6},
+judge/.style={diamond,aspect=2.3,draw=Navy,line width=.8pt,fill=white,text width=27mm,inner sep=1.5mm,align=center,font=\small,text=black},
+edge/.style={-{Stealth[length=2.2mm]},draw=Navy,line width=.85pt},
+tag/.style={font=\footnotesize,fill=white,inner sep=1.2pt,text=Navy}]
+\node[box] (obs) at (0,0) {\textbf{稳态观测}\\获取 3 个新帧、取中位数};
+\node[warn] (cam) at (4.7,0) {\textbf{相机无新帧}\\原地等待；超时暂停或退出};
+\node[judge] (valid) at (0,-2.4) {\textbf{目标有效？}};
+\node[warn] (blind) at (-4.7,-2.4) {\textbf{目标不可见}\\受限盲行与偏航补偿\\超限则暂停／退出};
+\node[judge] (arr) at (0,-4.8) {\textbf{满足到达条件？}};
+\node[act] (next) at (4.7,-4.8) {\textbf{结束当前路段}\\进入转角或终点放置};
+\node[judge] (err) at (0,-7.2) {\textbf{方位误差超限？}\\$|\beta|>\tau$};
+\node[act] (walk) at (-2.8,-9.6) {\textbf{直行一步}\\更新推进与偏航记录};
+\node[act] (turn) at (2.8,-9.6) {\textbf{执行一次纠偏}\\重新观测转角效果};
+\draw[edge] (obs)--node[tag,above] {无新帧}(cam);
+\draw[edge] (obs)--node[tag,right] {有新帧}(valid);
+\draw[edge] (valid)--node[tag,above] {否}(blind);
+\draw[edge] (valid)--node[tag,right] {是}(arr);
+\draw[edge] (arr)--node[tag,above] {是}(next);
+\draw[edge] (arr)--node[tag,right] {否}(err);
+\draw[edge] (err.west)-|node[tag,pos=.25,above] {容差内}(walk.north);
+\draw[edge] (err.east)-|node[tag,pos=.25,above] {偏差大}(turn.north);
+\draw[edge] (blind.south)--(-4.7,-8.6)-|node[tag,pos=.25,left,align=center] {未超\\限制}(walk.west);
+\draw[draw=Teal,line width=.8pt] (walk.south)--(-2.8,-10.8)--(2.8,-10.8)--(turn.south);
+\draw[edge,draw=Teal] (0,-10.8)--(0,-11.3)--(-7.2,-11.3)--(-7.2,0)--(obs.west);
+\node[tag,text=Teal] at (-3.6,-11.3) {动作完成、稳态等待后再次观测};
+\end{tikzpicture}

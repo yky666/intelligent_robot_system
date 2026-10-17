@@ -1,0 +1,79 @@
+# Example signature ONLY: replace with measured TonyPi body/approved marker colors.
+# Hardware execution requires all three calibration flags and a finish polygon.
+hardware_calibrated: false
+identity_calibrated: false
+depth_coverage_calibrated: false
+sync_slop: 0.05
+target_timeout: 0.5
+mission_timeout: 1.0
+tf_timeout: 0.5
+grid_timeout: 1.0
+odom_timeout: 0.3
+stopped_linear: 0.015
+stopped_angular: 0.03
+visibility:
+  horizon: 1.0
+  margin: 0.12
+  camera_timeout: 1.0
+perception:
+  proposal_mode: color
+  # Optional markerless depth_body mode needs NEW full-body view enrollment.
+  # Requires a visible flat floor and roughly upright camera. Field validation
+  # is still required; these ranges are examples, not measured robot dimensions.
+  body:
+    min_width_m: 0.10
+    max_width_m: 0.45
+    min_height_m: 0.20
+    max_height_m: 0.55
+  identity:
+    # Enroll actual front/back/side/carrying views with tools/enroll_rgbd_identity.py.
+    # Empty templates permit shadow diagnostics only; execution requires templates.
+    references: []
+    max_distance: 0.35
+    reacquire_distance: 0.22
+    shape_ratio: 2.0
+    width_ratio: 1.8
+  hsv_bands:
+    - lower: [35, 90, 60]
+      upper: [85, 255, 255]
+  min_area_ratio: 0.001
+  max_area_ratio: 0.35
+  min_depth: 0.4
+  max_depth: 4.0
+  min_depth_samples: 30
+  min_valid_ratio: 0.6
+  max_depth_spread: 0.2
+  depth_cluster_band: 0.12
+  min_width_m: 0.025
+  max_width_m: 0.5
+  cloud_stride: 4
+  # Separate clearing-only endpoints; check this range on the actual sensor.
+  # No-return, NaN and Inf pixels remain unknown, never maximum-range rays.
+  clearing_max_depth: 4.5
+  clearing_stride: 4
+  min_cloud_points: 100
+  min_cloud_ratio: 0.2
+tracker:
+  confirmations: 4
+  timeout: 0.5
+  speed: 0.5
+  jitter: 0.12
+  reacquire_radius: 0.45
+  ambiguity_margin: 0.10
+  identity_reacquire_radius: 1.5
+  reacquire_confirmations: 6
+follow_distance: 1.0
+minimum_distance: 0.65
+footprint_radius: 0.26
+max_linear: 0.12
+max_angular: 0.4
+braking_acceleration: 0.3
+angular_braking_acceleration: 0.6
+reaction_time: 0.3
+finish_tolerance: 0.15
+finish_hold: 2.0
+finish_motion_tolerance: 0.08
+# Convex polygon in this robot's odom frame, e.g. [[4,-1],[6,-1],[6,1],[4,1]].
+# Measure after placing the robot at its starting position; odom must not reset.
+finish_polygon: []
+lost_failure_seconds: 60.0

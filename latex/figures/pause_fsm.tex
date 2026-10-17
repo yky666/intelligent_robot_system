@@ -1,0 +1,11 @@
+\begin{tikzpicture}[box/.style={draw=Navy!65,line width=.8pt,rounded corners=3pt,fill=Navy!3,text width=35mm,minimum height=19mm,align=center,inner sep=3mm,font=\small,text=black},act/.style={box,draw=Teal,fill=Teal!6},warn/.style={box,draw=Rust,fill=Rust!6},edge/.style={-{Stealth[length=2.3mm]},line width=.9pt,draw=Navy},tag/.style={font=\footnotesize,text=Navy,fill=white,inner sep=1.3pt}]
+\node[act] (run) at (0,0) {\textbf{运行中}\\[1mm]\texttt{go = set}};
+\node[warn] (pause) at (6.5,0) {\textbf{交互暂停}\\[1mm]\texttt{go = clear}};
+\node[box] (end) at (0,-3.2) {\textbf{终止与资源清理}\\[1mm]停止后续帧、关闭资源};
+\node[warn] (exit) at (6.5,-3.2) {\textbf{无头模式失败}\\[1mm]\texttt{stop\_ev = set}};
+\draw[edge] ([yshift=3mm]run.east)--node[tag,above] {P／失败守卫}([yshift=3mm]pause.west);
+\draw[edge] ([yshift=-3mm]pause.west)--node[tag,below] {S 恢复}([yshift=-3mm]run.east);
+\draw[edge] (run)--node[tag,left] {Q／信号／异常}(end);
+\draw[edge] (run.south east)--node[tag,above,sloped] {失败且无窗口}(exit.north west);
+\draw[edge] (exit)--node[tag,above] {退出}(end);
+\end{tikzpicture}

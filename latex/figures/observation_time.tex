@@ -1,0 +1,12 @@
+\begin{tikzpicture}[>=Stealth,font=\small]
+\draw[->,Navy,thick] (0,0)--(14.2,0) node[right] {$t$};
+\node[anchor=east,text=Navy] at (0,1.15) {视觉观测};
+\node[anchor=east,text=Teal] at (0,-1.15) {位姿变换};
+\fill[Navy] (2,0) circle (2pt);\fill[Navy] (10,0) circle (2pt);
+\node[above,align=center,text=Navy] at (2,.25) {图像采样\\$t_z$};
+\node[above,align=center,text=Navy] at (10,.25) {检测结果接收\\$t_r$};
+\draw[<->,Muted] (2,-.4)--node[below,fill=white] {传输与识别延迟 $t_r-t_z$}(10,-.4);
+\node[draw=Teal,fill=Teal!5,rounded corners=2pt,align=center,inner sep=2.5mm] (tf) at (2,-2) {查询 $T^{\rm map}_{\rm camera}(t_z)$\\保留观测原时间戳};
+\node[draw=Rust,fill=Rust!5,rounded corners=2pt,align=center,inner sep=2.5mm] at (10,-2) {误用接收时刻 $t_r$\\可能把本车运动混入目标位移};
+\draw[->,Teal] (2,-.65)--(tf.north);
+\end{tikzpicture}

@@ -1,0 +1,238 @@
+hardware_calibrated: false
+hardware_backend: controller
+action_dir: /home/pi/TonyPi/ActionGroups
+camera: auto
+camera_timeout: 2.0
+search_timeout: 60.0
+approach_action_limit: 80
+head:
+  pan: 1500
+  tilt: 1200
+  pan_id: 2
+  tilt_id: 1
+  pickup_tilt: 1200
+  carry_tilt: 1200
+  preserve_pan: true
+vision:
+  target_color: red
+  color_space: HSV
+  lower_hsv:
+  - 0
+  - 90
+  - 45
+  upper_hsv:
+  - 10
+  - 255
+  - 255
+  min_area: 0.003
+  max_area: 0.5
+  center_x: 0.5
+  x_tolerance: 0.06
+  grab_bottom: 0.88
+  grab_area: 0.025
+  stable_frames: 6
+  stability_tolerance: 0.06
+  extra_hsv_ranges:
+  - lower:
+    - 170
+    - 90
+    - 45
+    upper:
+    - 179
+    - 255
+    - 255
+actions:
+  approach: go_forward_one_small_step
+  align_left: left_move
+  align_right: right_move
+  grab: /home/pi/tonypi_web_control/action/grab
+  forward: /home/pi/tonypi_web_control/action/grab_go_forward
+  left: /home/pi/tonypi_web_control/action/grab_turn_left
+  right: /home/pi/tonypi_web_control/action/grab_turn_right
+  release: put_down
+  retry_reset: grab_release
+  stand: /home/pi/TonyPi/ActionGroups/stand
+grasp_attempts: 3
+feedback:
+  verify_carry: true
+  held_roi: null
+  placed_roi: null
+  roi_min_area: 0.03
+  roi_max_area: 0.95
+  held:
+    mode: vision
+    file: ''
+    timeout: 3.0
+    max_age: 0.5
+    stable_samples: 6
+  released:
+    mode: vision
+    file: ''
+    timeout: 3.0
+    max_age: 0.5
+    stable_samples: 6
+  placement_ready:
+    mode: file
+    file: /tmp/tonypi_placement.json
+    timeout: 30.0
+    max_age: 0.5
+    stable_samples: 3
+obstacle_guard:
+  enabled: true
+  mode: vision
+  roi: null
+  floor_lower_hsv:
+  - 0
+  - 0
+  - 40
+  floor_upper_hsv:
+  - 179
+  - 65
+  - 235
+  interaction_roi: null
+  contour_fraction: 0.06
+  occupancy_fraction: 0.15
+  min_visible_fraction: 0.5
+  edge_fraction: 0.015
+  edge_contour_height: 0.3
+  file: /tmp/tonypi_distance.json
+  max_age: 0.3
+  stop_distance_m: 0.3
+  poll_seconds: 0.05
+  panel_geometry:
+    enabled: true
+    calibrated: false
+    roi: &id001
+    - 0.05
+    - 0.35
+    - 0.95
+    - 0.95
+    canny: &id002
+    - 60
+    - 140
+    hough_votes: 30
+    min_line_pixels: 45
+    near_y: 0.88
+    far_y: 0.5
+    center_x: 0.5
+    center_tolerance: 0.07
+    heading_tolerance: 0.07
+    heading_gain: 0.8
+    width_range: &id003
+    - 0.25
+    - 0.95
+    front_y: &id004
+    - 0.35
+    - 0.98
+    front_span: 0.35
+    min_visible_fraction: 0.65
+    min_image_std: 3
+    stable_frames: 4
+    min_forward_cycles: 3
+    turns: &id005
+    - left
+    - right
+    turn_min_cycles: &id006
+      left: 3
+      right: 3
+    turn_max_cycles: &id007
+      left: 12
+      right: 12
+    endpoint_mode: yellow_cone
+    endpoint_min_forward_cycles: 3
+    endpoint_stable_frames: 8
+    release_at_endpoint: true
+    lost_timeout: 3.0
+    timeout: 180.0
+    settle_seconds: 0.2
+    require_panel_support: true
+    post_min_height: 30
+    post_base_radius: 14
+    panel_max_std: 18
+    endpoint_hold_seconds: 1.0
+    cone: &id008
+      lower_hsv:
+      - 18
+      - 100
+      - 70
+      upper_hsv:
+      - 40
+      - 255
+      - 255
+      min_area: 0.006
+      max_area: 0.3
+      min_height: 0.12
+      taper_ratio: 0.7
+      center_tolerance: 0.3
+      stop_bottom: 0.65
+    branch_gap_y: 0.06
+    panel_max_saturation: 65
+  panel_stop_bottom: 0.85
+  cone_stop_bottom: 0.92
+hold_arm_servos:
+- 6
+- 7
+- 8
+- 14
+- 15
+- 16
+route:
+- kind: forward
+  cycles: 6
+- kind: left
+  cycles: 3
+- kind: forward
+  cycles: 6
+- kind: right
+  cycles: 3
+- kind: forward
+  cycles: 6
+- kind: wait
+  seconds: 1.0
+settle_seconds: 0.8
+heartbeat:
+  enabled: false
+  host: 192.168.1.100
+  port: 15000
+  session: team1
+hold_sensor_file: ''
+hold_sensor_timeout: 1.0
+lane_following:
+  enabled: true
+  calibrated: false
+  roi: *id001
+  canny: *id002
+  hough_votes: 30
+  min_line_pixels: 45
+  near_y: 0.88
+  far_y: 0.5
+  center_x: 0.5
+  center_tolerance: 0.07
+  heading_tolerance: 0.07
+  heading_gain: 0.8
+  width_range: *id003
+  front_y: *id004
+  front_span: 0.35
+  min_visible_fraction: 0.65
+  min_image_std: 3
+  stable_frames: 4
+  min_forward_cycles: 3
+  turns: *id005
+  turn_min_cycles: *id006
+  turn_max_cycles: *id007
+  endpoint_mode: yellow_cone
+  endpoint_min_forward_cycles: 3
+  endpoint_stable_frames: 8
+  release_at_endpoint: true
+  lost_timeout: 3.0
+  timeout: 180.0
+  settle_seconds: 0.2
+  require_panel_support: true
+  post_min_height: 30
+  post_base_radius: 14
+  panel_max_std: 18
+  endpoint_hold_seconds: 1.0
+  cone: *id008
+  branch_gap_y: 0.06
+  panel_max_saturation: 65
+startup_mode: manual

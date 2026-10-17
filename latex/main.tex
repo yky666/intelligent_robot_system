@@ -1,46 +1,43 @@
 % !TeX program = xelatex
-\documentclass[UTF8,a4paper,zihao=-4,fontset=fandol]{ctexart}
+\documentclass[UTF8,a4paper,zihao=-4,fontset=none]{ctexart}
+\setCJKmainfont[Path=fonts/,BoldFont=FandolSong-Bold.otf,ItalicFont=FandolKai-Regular.otf]{FandolSong-Regular.otf}
+\setCJKsansfont[Path=fonts/,BoldFont=FandolHei-Bold.otf]{FandolHei-Regular.otf}
+\setCJKmonofont[Path=fonts/]{FandolFang-Regular.otf}
 \input{preamble}
 \input{metadata}
 \begin{document}
 \hypersetup{pageanchor=false}
-\begin{titlepage}
-\centering
-\vspace*{22mm}
-{\Large 智能机器人系统综合实验\par}
-\vspace{12mm}
-{\Huge\bfseries 基于视觉与地图导航的\par 多机协同控制\par}
-\vspace{8mm}
-{\Large 方案设计与实验报告（协作初稿）\par}
-\vspace{18mm}
-\begin{tabular}{rl}
-课程/班级：&\ReportClass\\[6mm]
-团队名称：&\ReportTeam\\[6mm]
-成员姓名、学号：&见第\ref{sec:division}节分工表\\[6mm]
-报告日期：&\ReportDate\\[6mm]
-代码依据：&\texttt{\SourceRevision}
-\end{tabular}
-\vfill
-\begin{minipage}{.88\linewidth}
-\small 本报告汇总 TonyPi 抱物穿行与四类 TurtleBot2 跟随方案。本次重点撰写人形机器人、方式二建图避障跟随；其余方式由对应小组在独立源文件中补充。姓名、个人贡献与定量实验数据尚待各组核实。文中区分代码实现、离线验证、局部实机验证与完整比赛验收。
-\end{minipage}
-\end{titlepage}
+\input{cover}
 \pagenumbering{Roman}
 \hypersetup{pageanchor=true}
 \input{sections/00_abstract}
+\clearpage
 \tableofcontents
 \clearpage\pagenumbering{arabic}
+\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
 \input{sections/01_overview}
 \input{sections/02_division}
 \input{sections/03_architecture}
+\addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
 \input{sections/10_humanoid}
+\input{sections/11_humanoid_analysis}
+\input{sections/12_humanoid_contracts}
+\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
 \input{sections/20_follow1}
+\addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
 \input{sections/30_follow2}
+\input{sections/31_follow2_analysis}
+\input{sections/32_follow2_contracts}
+\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
 \input{sections/40_follow3}
 \input{sections/50_follow4}
 \input{sections/60_experiments}
+\input{sections/61_video_evidence}
 \input{sections/70_conclusion}
 \input{sections/80_references}
 \appendix
+\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
 \input{sections/90_reproduction}
+\input{sections/91_code_analysis}
+\input{sections/92_parameter_snapshot}
 \end{document}

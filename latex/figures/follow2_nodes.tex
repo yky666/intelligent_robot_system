@@ -1,0 +1,17 @@
+\begin{tikzpicture}[box/.style={draw=Navy!65,line width=.8pt,rounded corners=3pt,fill=Navy!3,text width=35mm,minimum height=19mm,align=center,inner sep=3mm,font=\small,text=black},act/.style={box,draw=Teal,fill=Teal!6},warn/.style={box,draw=Rust,fill=Rust!6},edge/.style={-{Stealth[length=2.3mm]},line width=.9pt,draw=Navy},tag/.style={font=\footnotesize,text=Navy,fill=white,inner sep=1.3pt}]
+\node[box] (ar) at (0,0) {\textbf{AR 目标检测}\\[1mm]\texttt{ar\_pose\_marker}};
+\node[act] (tf) at (5.3,0) {\textbf{目标坐标适配}\\[1mm]\texttt{marker\_target} + TF};
+\node[box] (mi) at (10.6,0) {\textbf{任务与定位状态}\\[1mm]任务桥 + AMCL};
+\node[box] (f) at (5.3,-3.1) {\textbf{地图跟随器}\\[1mm]\texttt{map\_follower}};
+\node[act] (nav) at (10.6,-3.1) {\textbf{全局／局部规划}\\[1mm]\texttt{move\_base} / DWA};
+\node[warn] (ga) at (5.3,-6.2) {\textbf{独立速度门控}\\[1mm]\texttt{velocity\_gate}};
+\node[box] (base) at (10.6,-6.2) {\textbf{底盘导航输入}\\[1mm]\texttt{cmd\_vel\_mux}};
+\draw[edge] (ar)--node[tag,above] {测量时刻}(tf);
+\draw[edge] (tf)--node[tag,right] {地图目标位置}(f);
+\draw[edge] (mi.south west)--node[tag,above,sloped] {任务与定位有效性}(f.north east);
+\draw[edge] (f)--node[tag,above] {导航目标}(nav);
+\draw[edge] (f)--node[tag,left] {运动许可}(ga);
+\draw[edge] (nav.south)--(10.6,-4.65)-|node[tag,pos=.25,above] {原始导航速度}([xshift=10mm]ga.north);
+\draw[edge] (ga)--node[tag,above] {安全速度}(base);
+\node[box,align=left] at (0,-3.1) {\textbf{职责区分}\\跟随器：目标与许可\\门控：安全速度出口};
+\end{tikzpicture}

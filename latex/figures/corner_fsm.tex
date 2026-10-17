@@ -1,0 +1,15 @@
+\begin{tikzpicture}[box/.style={draw=Navy!65,line width=.8pt,rounded corners=3pt,fill=Navy!3,text width=35mm,minimum height=19mm,align=center,inner sep=3mm,font=\small,text=black},act/.style={box,draw=Teal,fill=Teal!6},warn/.style={box,draw=Rust,fill=Rust!6},edge/.style={-{Stealth[length=2.3mm]},line width=.9pt,draw=Navy},tag/.style={font=\footnotesize,text=Navy,fill=white,inner sep=1.3pt}]
+\node[box] (a) at (0,0) {\textbf{确定搜索方向}\\[1mm]A 后左转／B 后右转};
+\node[act] (t) at (5.3,0) {\textbf{执行一次转向}\\[1mm]等待、转向、稳态等待};
+\node[box] (v) at (10.6,0) {\textbf{观测下一标记}\\[1mm]检查 B 或 C 是否可见};
+\node[act] (ok) at (10.6,-3) {\textbf{下一标记可见}\\[1mm]返回主循环、继续对中};
+\node[warn] (retry) at (5.3,-3) {\textbf{未见下一标记}\\[1mm]累计尝试；最多 12 次};
+\node[warn] (fail) at (0,-3) {\textbf{搜索失败}\\[1mm]交互暂停／无头退出};
+\draw[edge] (a)--node[tag,above] {进入转角}(t);
+\draw[edge] (t)--node[tag,above] {动作完成}(v);
+\draw[edge] (v)--node[tag,right] {可见}(ok);
+\draw[edge] (v.south west)--node[tag,above,sloped] {不可见}(retry.north east);
+\draw[edge] (retry)--node[tag,above] {达到上限}(fail);
+\draw[edge] (retry.north)--node[tag,right] {仍可尝试}(t.south);
+\node[draw=Navy!30,fill=Navy!2,rounded corners=2pt,text width=145mm,align=left,inner sep=3mm,font=\small] at (5.3,-5.3) {\textbf{观测约束：}无新帧时原地等待，不盲目继续转向；成功条件是下一标记可见，并非精确完成 $90^\circ$ 转角。};
+\end{tikzpicture}

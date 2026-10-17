@@ -1,0 +1,119 @@
+{
+  "source": "repository code and original video; no empirical performance estimates",
+  "actions": [
+    {
+      "action": "grab_final_v2",
+      "frames": 7,
+      "duration_s": 9.5,
+      "first_frame_s": 0.5,
+      "max_frame_s": 4.0
+    },
+    {
+      "action": "catch_ball_go",
+      "frames": 10,
+      "duration_s": 0.95,
+      "first_frame_s": 0.1,
+      "max_frame_s": 0.15
+    },
+    {
+      "action": "catch_ball_turn_left",
+      "frames": 6,
+      "duration_s": 1.0,
+      "first_frame_s": 0.1,
+      "max_frame_s": 0.25
+    },
+    {
+      "action": "catch_ball_turn_right",
+      "frames": 6,
+      "duration_s": 1.0,
+      "first_frame_s": 0.1,
+      "max_frame_s": 0.25
+    },
+    {
+      "action": "put_down",
+      "frames": 9,
+      "duration_s": 7.1000000000000005,
+      "first_frame_s": 1.5,
+      "max_frame_s": 1.5
+    }
+  ],
+  "trail_sampling": [
+    {
+      "spacing_m": 0.04,
+      "retained_points": 69
+    },
+    {
+      "spacing_m": 0.08,
+      "retained_points": 36
+    },
+    {
+      "spacing_m": 0.25,
+      "retained_points": 13
+    }
+  ],
+  "crops": {
+    "figures/site/corridor.jpg": [
+      [
+        40,
+        140,
+        1230,
+        1230
+      ],
+      "figures/site/corridor_focus.jpg"
+    ],
+    "figures/video/competition_184s.jpg": [
+      [
+        70,
+        70,
+        850,
+        465
+      ],
+      "figures/video/competition_184s_focus.jpg"
+    ],
+    "figures/video/competition_076s.jpg": [
+      [
+        225,
+        70,
+        895,
+        520
+      ],
+      "figures/video/competition_076s_focus.jpg"
+    ],
+    "figures/video/competition_133s.jpg": [
+      [
+        150,
+        35,
+        890,
+        520
+      ],
+      "figures/video/competition_133s_focus.jpg"
+    ],
+    "figures/video/competition_165s.jpg": [
+      [
+        100,
+        40,
+        900,
+        530
+      ],
+      "figures/video/competition_165s_focus.jpg"
+    ],
+    "figures/video/competition_196s.jpg": [
+      [
+        100,
+        30,
+        900,
+        530
+      ],
+      "figures/video/competition_196s_focus.jpg"
+    ],
+    "figures/video/competition_218s.jpg": [
+      [
+        70,
+        30,
+        930,
+        530
+      ],
+      "figures/video/competition_218s_focus.jpg"
+    ]
+  }
+}

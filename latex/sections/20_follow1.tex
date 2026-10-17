@@ -1,4 +1,4 @@
-\section{第二组（暂定）：方式一AR直接跟随}
+\section{方式一AR直接跟随}
 \subsection{已有实现摘要与方式认定}
 仓库已合并从虚拟机提取的\code{ar_follower}包及独立实验说明\cite{follow1}。该实现通过Kinect检测前方机器人背部ALVAR标记，取标记光学坐标中的前向距离$z$和横向偏差$x$，以比例控制输出速度：
 \begin{equation}
@@ -9,12 +9,5 @@ v=\operatorname{sat}\!\left(K_v(z-d_0)\right),\qquad
 
 课程参考的方式一强调固定场地标签航路点，而该组已提交程序属于移动目标背贴AR直接跟随，两者存在差别。应由对应组明确最终参赛定义、与方式二/三的独立性及教师确认情况，不在本初稿中强行等同。
 
-\subsection{本组应补充的内容}
-\pending{填写实际组号、现场标签尺寸、距离标定、完整跟随记录、转角与遮挡试验。现有节点缺少扫描/目标消息超时看门狗，不能将收到空检测消息时停车等同于所有通信中断时停车。}
-\begin{table}[htbp]\centering\small
-\begin{tabularx}{\linewidth}{p{28mm}YY}\toprule
-姓名/学号 & 具体任务 & 交付证据/合作说明\\\midrule
-待填写 & 标记与相机标定 & 待填写\\
-待填写 & 跟随控制与实机测试 & 待填写\\
-待填写 & 数据整理与报告 & 待填写\\\bottomrule
-\end{tabularx}\caption{第二组（暂定）内部职责}\end{table}
+
+现有节点缺少扫描与目标消息超时看门狗，因此收到空检测消息时停车，不能等同于所有通信中断时都能停车。该实现边界应与方式二的独立门控区分。

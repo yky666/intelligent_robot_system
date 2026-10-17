@@ -1,0 +1,24 @@
+# Reference: TonyPi 1.20 front-view diagram in the official PC software tutorial.
+# left/right are the ROBOT's own sides; axis names below describe placement only.
+# Verify wiring, sign, mechanical zero and allowed range on the actual machine.
+hardware_verified: false
+# Inspected team robot uses legacy Board.py on ttyAMA0 at 115200 baud.
+hardware_backend: legacy
+degrees_per_unit: 0.24
+joints:
+  left_leg_foot:       {id: 1, zero: null, direction: null, min: null, max: null}
+  left_leg_ankle:      {id: 2, zero: null, direction: null, min: null, max: null}
+  left_leg_knee:       {id: 3, zero: null, direction: null, min: null, max: null}
+  left_leg_upper:      {id: 4, zero: null, direction: null, min: null, max: null}
+  left_leg_proximal:   {id: 5, zero: null, direction: null, min: null, max: null}
+  left_arm_elbow:      {id: 6, zero: null, direction: null, min: null, max: null}
+  left_arm_middle:     {id: 7, zero: null, direction: null, min: null, max: null}
+  left_arm_proximal:   {id: 8, zero: null, direction: null, min: null, max: null}
+  right_leg_foot:      {id: 9, zero: null, direction: null, min: null, max: null}
+  right_leg_ankle:     {id: 10, zero: null, direction: null, min: null, max: null}
+  right_leg_knee:      {id: 11, zero: null, direction: null, min: null, max: null}
+  right_leg_upper:     {id: 12, zero: null, direction: null, min: null, max: null}
+  right_leg_proximal:  {id: 13, zero: null, direction: null, min: null, max: null}
+  right_arm_elbow:     {id: 14, zero: null, direction: null, min: null, max: null}
+  right_arm_middle:    {id: 15, zero: null, direction: null, min: null, max: null}
+  right_arm_proximal:  {id: 16, zero: null, direction: null, min: null, max: null}

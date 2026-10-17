@@ -1,14 +1,14 @@
-\begin{tikzpicture}[node distance=8mm and 9mm]
-\node[block] (v) {TonyPi相机\\固定标记/道路观测};
-\node[block,right=of v] (s) {路线状态机\\抓取、直行、转弯、放置};
-\node[block,right=of s] (a) {动作组执行\\抱物上肢固定};
+\begin{tikzpicture}[flow/.style={-{Stealth[length=2mm]},thick,draw=Navy!85}, stage/.style={draw=Navy!45,rounded corners=2pt,fill=Navy!3,align=center,text width=35mm,minimum height=17mm,font=\small,inner sep=3mm}]
+\node[stage] (v) at (0,0) {TonyPi 相机\\固定标记／道路观测};
+\node[stage] (s) at (5,0) {路线状态机\\抓取、直行、转弯、放置};
+\node[stage] (a) at (10,0) {动作组执行\\抱物上肢固定};
 \draw[flow] (v)--(s);\draw[flow] (s)--(a);
-\node[block,below=13mm of v] (m) {TurtleBot相机\\背部AR目标};
-\node[block,right=of m] (t) {按时间戳转到map\\历史轨迹与回退点};
-\node[block,right=of t] (n) {move\_base/DWA\\地图与实时扫描};
+\node[stage] (m) at (0,-2.7) {TurtleBot 相机\\背部 AR 目标};
+\node[stage] (t) at (5,-2.7) {按时间戳变换至 map\\历史轨迹与回退点};
+\node[stage] (n) at (10,-2.7) {\texttt{move\_base} / DWA\\地图与实时扫描};
 \draw[flow] (m)--(t);\draw[flow] (t)--(n);
-\node[block,below=of n] (g) {许可与速度门控\\输出至底盘};
+\node[stage] (g) at (10,-5.1) {许可与速度门控\\输出至底盘};
 \draw[flow] (n)--(g);
-\node[note,below=of m,text width=68mm,anchor=north west] (h) {任务状态须另行接入：\\通用competition支持心跳桥；\\最新marker\_route尚需适配};
-\draw[flow,dashed] (h.east)-|(g.west);
+\node[draw=Teal!55,rounded corners=2pt,fill=Teal!4,align=left,text width=85mm,inner sep=3mm,font=\footnotesize] (h) at (2.5,-5.1) {\textbf{\color{Navy}任务状态接口}\\[1.5mm]通用 \texttt{competition}：已支持心跳桥。\\最新 \texttt{marker\_route}：需适配任务状态输出。};
+\draw[flow,dashed,draw=Teal] (h.east)--(g.west);
 \end{tikzpicture}
