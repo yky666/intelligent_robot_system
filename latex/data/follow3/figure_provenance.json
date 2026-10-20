@@ -1,0 +1,14 @@
+{
+  "vm_program": "codex-clipboard-817b21c5-1bf0-4484-984f-8303d0621b9f.png crop 0,0,2210,750",
+  "rviz_program": "codex-clipboard-02076494-ce5b-4f46-8cd0-91afeebd228f.png crop 1680,20,2690,760",
+  "recognition_views": "original field-follow-fix previews; separate observations",
+  "latency_series": "recognition_evidence.json raw records",
+  "planner_stages": "planner_demo_evidence.json actual reachable_standoff core output",
+  "planner_gap": {
+    "length_m": 2.404614647219161,
+    "max_gap_m": 1.9817668884104407,
+    "initial_gap_m": 1.15,
+    "final_gap_m": 0.8070935509592426,
+    "updates": 8
+  }
+}

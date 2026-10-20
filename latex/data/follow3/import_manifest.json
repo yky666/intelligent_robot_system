@@ -1,0 +1,363 @@
+{
+  "source_docx": "F:\\智能机器人实验\\报告整合工作记录\\2026-10-19\\来源材料\\方式三实验报告交付\\视觉跟随与自主避障实验报告.docx",
+  "source_docx_sha256": "32f8bfb5df8ab2acda42a506a9c4832452d77528360a9b5535c5676e900a97c9",
+  "source_repository_commit": "43a7771baa2b33afc203b54543001995838879fd",
+  "imported_word_figures": [
+    {
+      "word_index": 6,
+      "relationship": "rId10",
+      "filename": "f3_01_site.jpg",
+      "sha256": "4d6bbad36f36cbe44a9302729fc9a0ca223a652d38ef5a74337f588861599fbb",
+      "caption": "图 1  正式比赛场地全景  连续挡板构成通道与转弯区域"
+    },
+    {
+      "word_index": 20,
+      "relationship": "rId11",
+      "filename": "f3_02_dataflow.png",
+      "sha256": "5272559e05b68bf8d55252d232568fe1fba56b1098027889c6040027cf6c30df",
+      "caption": "图 2  方式三视觉跟随与避障数据流"
+    },
+    {
+      "word_index": 66,
+      "relationship": "rId12",
+      "filename": "f3_03_jitter.png",
+      "sha256": "f8ac46f83db2939227de873f699a9f01f3f83201e87256ccf193da1f687311a5",
+      "caption": "图 3  派生扰动回放中的检测耗时与检出次数"
+    },
+    {
+      "word_index": 75,
+      "relationship": "rId13",
+      "filename": "f3_04_race_frames.jpg",
+      "sha256": "667558f87570da7f8779b6e44baeccaf2d30225d763b4fffa2b45ffd5c8ecb1a",
+      "caption": "图 4  比赛视频过程抽帧  标注为录像时间  与正式计时起止不完全相同"
+    },
+    {
+      "word_index": 79,
+      "relationship": "rId14",
+      "filename": "f3_05_program.png",
+      "sha256": "c3284a8662502a1dbc40f64501fafd701e254ea1887f395b6a861244b366b12d",
+      "caption": "图 5  现场原始程序截图  状态终端与识别及点云同屏  仅裁切空白桌面"
+    },
+    {
+      "word_index": 82,
+      "relationship": "rId15",
+      "filename": "f3_06_rviz.png",
+      "sha256": "57c4ed4d6ab6ee092c06dcd0eac7d3d375a94f3ccc9b3047ac6304a08d747382",
+      "caption": "图 6  原始截图中的 RViz 点云与代价地图  图层颜色以运行配置为准"
+    },
+    {
+      "word_index": 86,
+      "relationship": "rId16",
+      "filename": "f3_07_poses.jpg",
+      "sha256": "4e678e001f443013136baf2d8ba8c6d5b957f9581644780cf3966dcec05473a7",
+      "caption": "图 7  实际程序输出的多姿态识别画面  保留原始目标框与局部角点"
+    },
+    {
+      "word_index": 89,
+      "relationship": "rId17",
+      "filename": "f3_08_frame_timing.png",
+      "sha256": "23c130a1326718cb08ab90feebc954af2dec644722a9ee2d90f8754fec26b417",
+      "caption": "图 8  同源样本逐帧耗时  开发机离线测量  曲线点对应原始 JSON 记录"
+    },
+    {
+      "word_index": 94,
+      "relationship": "rId18",
+      "filename": "f3_09_planner.png",
+      "sha256": "0b01822cc2bbeb0a6399fd9f3a4d29e6fcf954e546318b7aa5c7dd4c97d87b0f",
+      "caption": "图 9  项目规划函数输出的三个阶段  合成栅格几何回放  非比赛地图"
+    },
+    {
+      "word_index": 97,
+      "relationship": "rId19",
+      "filename": "f3_10_planner_distance.png",
+      "sha256": "853bea07b45f69b606bc30a2dc9167cf3a41f2e2799ce33fefd38941d52c696c",
+      "caption": "图 10  合成回放的目标距离与累计路径长度  从实际重建路径计算"
+    },
+    {
+      "word_index": 118,
+      "relationship": "rId20",
+      "filename": "f3_11_turtlebot.png",
+      "sha256": "bf32b6f90931b772e0a265e35bf589ecf0711f915e579b7eee5698bfd5e72ace",
+      "caption": "图 11  开发阶段的 Turtlebot 目标识别输出  绿色框为已关联底盘目标"
+    }
+  ],
+  "imported_word_tables": [
+    {
+      "word_index": 16,
+      "label": "tab:f3-platform",
+      "rows": [
+        [
+          "组成",
+          "实验配置"
+        ],
+        [
+          "前车",
+          "TonyPi 人形机器人  抱持红色方块行走"
+        ],
+        [
+          "后车",
+          "Turtlebot2  Kobuki 差速底盘"
+        ],
+        [
+          "视觉传感器",
+          "Microsoft Kinect  RGB 与配准深度"
+        ],
+        [
+          "软件环境",
+          "Ubuntu 16.04  ROS Kinetic  Python 2.7  OpenCV"
+        ],
+        [
+          "计算与显示",
+          "笔记本及 VMware Ubuntu  目标预览与 RViz"
+        ],
+        [
+          "任务结果",
+          "已完成比赛  比赛耗时 180 s"
+        ]
+      ]
+    },
+    {
+      "word_index": 62,
+      "label": "tab:f3-sampling",
+      "rows": [
+        [
+          "采样条件",
+          "观测结果",
+          "更新频率",
+          "检测中位数"
+        ],
+        [
+          "抱物正面  约 12 s",
+          "254/254 tracking",
+          "21.2 Hz",
+          "36.5 ms"
+        ],
+        [
+          "抱物转约 30°  约 12 s",
+          "220/220 tracking",
+          "18.3 Hz",
+          "43.2 ms"
+        ],
+        [
+          "光流接续后静态采样  约 12 s",
+          "213/213 tracking",
+          "17.8 Hz",
+          "42.2 ms"
+        ]
+      ]
+    },
+    {
+      "word_index": 71,
+      "label": "tab:f3-map",
+      "rows": [
+        [
+          "记录项目",
+          "结果",
+          "对应含义"
+        ],
+        [
+          "初次现场点云年龄 P95",
+          "约 23 ms",
+          "输入新鲜度正常"
+        ],
+        [
+          "时序层后点云年龄 P95",
+          "约 21 ms",
+          "仍使用当前观测"
+        ],
+        [
+          "局部与全局地图计算频率",
+          "约 20 / 10 Hz",
+          "内部占据更新"
+        ],
+        [
+          "地图对外发布频率",
+          "约 7.9 / 4.1 Hz",
+          "与 RViz 显示相关"
+        ],
+        [
+          "10 s 内过期体素数",
+          "局部 474  全局 1575",
+          "历史证据按时释放"
+        ]
+      ]
+    },
+    {
+      "word_index": 124,
+      "label": "tab:f3-code",
+      "rows": [
+        [
+          "功能",
+          "仓库路径"
+        ],
+        [
+          "场地启动",
+          "tools/start_method3_field.sh\ntools/run_rgbd_field_session.py"
+        ],
+        [
+          "RGB-D 检测节点",
+          "turtlebot/follow3/rgbd_following/scripts/rgbd_target.py"
+        ],
+        [
+          "身体与抱物特征",
+          "src/rgbd_following_core/body.py\nsrc/rgbd_following_core/tonypi_parts.py"
+        ],
+        [
+          "跟踪与光流",
+          "src/rgbd_following_core/tracking.py\nsrc/rgbd_following_core/feature_flow.py"
+        ],
+        [
+          "跟随与规划",
+          "scripts/rgbd_follower.py\nsrc/rgbd_following_core/planning.py"
+        ],
+        [
+          "地图更新",
+          "scripts/rgbd_obstacles.py\nsrc/temporal_voxel_layer.cpp"
+        ],
+        [
+          "导航与速度门控",
+          "config/navigation.yaml\nscripts/rgbd_velocity_gate.py"
+        ]
+      ]
+    }
+  ],
+  "word_body_blocks_consumed": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127,
+    128,
+    129,
+    130,
+    131,
+    132,
+    133
+  ],
+  "figures": 11,
+  "tables": 4,
+  "note": "Word text and image bytes are the import authority. Original shared report is backed up outside this project."
+}

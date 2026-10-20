@@ -1,0 +1,4 @@
+﻿evidence_id,kind,result,scope,source
+f3-race,现场确认与视频元数据,完成；180秒；视频184.81秒,本次比赛；不推定多轮成功率,video_metadata.json；交付Word第7.2节
+f3-jitter,同源样本离线回放,60/60有候选；红块负样本0/12,12帧派生扰动；不是60个独立真实场景,recognition_evidence.json
+f3-planner,合成几何回放,8次子目标更新退出U形障碍,非比赛地图；非DWA动力学仿真,planner_demo_evidence.json
